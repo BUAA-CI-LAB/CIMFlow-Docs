@@ -18,6 +18,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="apple-mobile-web-app-title" content="CIMFlow" />
+        <link rel="icon" href="/favicon.ico"></link>
+      </head>
       <body className={inter.className} suppressHydrationWarning>
         <RootProvider
           search={{

@@ -7,7 +7,7 @@
     "dev": "next dev",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
-    "postbuild": "touch out/.nojekyll && echo 'cimflow.org' > out/CNAME",
+    "postbuild": "touch out/.nojekyll && echo 'www.cimflow.org' > out/CNAME",
     "deploy": "npm run build && gh-pages -d out -b gh-pages --dotfiles"
   },
   "dependencies": {

@@ -1,0 +1,105 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@source '../node_modules/fumadocs-ui/dist/**/*.js';
+
+:root {
+  /* Animation timings */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 350ms;
+  
+  /* Spacing system */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  
+  /* Shadow system */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+
+/* Gradient text effect - using teal/blue gradient for a cleaner look */
+.gradient-text {
+  background: linear-gradient(to right, var(--color-fd-primary), var(--color-fd-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Hero section gradient - refined for better visual appeal */
+.hero-gradient {
+  background: radial-gradient(circle at 50% 50%, 
+    var(--color-fd-primary-subtle), 
+    var(--color-fd-secondary-subtle) 80%);
+}
+
+/* Grid pattern background */
+.grid-pattern {
+  --grid-color: color-mix(in oklab, var(--color-fd-primary) 10%, transparent);
+  background: repeating-linear-gradient(to right, var(--grid-color), var(--grid-color) 1px, transparent 1px, transparent 50px), 
+              repeating-linear-gradient(to bottom, var(--grid-color), var(--grid-color) 1px, transparent 1px, transparent 50px);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Terminal styling */
+.terminal-cursor {
+  display: inline-block;
+  width: 0.5rem;
+  height: 1rem;
+  background-color: var(--color-fd-primary);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Section dividers */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-fd-border-strong), transparent);
+  margin: var(--space-8) 0;
+}
+
+/* Button hover effects */
+.button-hover-slide {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.button-hover-slide::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  transition: height var(--transition-normal);
+  z-index: -1;
+}
+
+.button-hover-slide:hover::after {
+  height: 100%;
+}

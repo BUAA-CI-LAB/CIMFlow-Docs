@@ -1,0 +1,160 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@source '../node_modules/fumadocs-ui/dist/**/*.js';
+
+:root {
+  /* Primary brand colors - using teal as the primary color for a cleaner, minimal look */
+  --color-fd-primary: #0891b2; /* Cleaner teal shade */
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-primary-muted: rgba(8, 145, 178, 0.8);
+  --color-fd-primary-subtle: rgba(8, 145, 178, 0.1);
+  
+  /* Secondary brand colors - a lighter shade of teal/blue for accent */
+  --color-fd-secondary: #0ea5e9; /* Keeping a nice blue for secondary */
+  --color-fd-secondary-foreground: #ffffff;
+  --color-fd-secondary-muted: rgba(14, 165, 233, 0.8);
+  --color-fd-secondary-subtle: rgba(14, 165, 233, 0.1);
+  
+  /* Accent colors - refined for better visual harmony */
+  --color-fd-accent: rgba(8, 145, 178, 0.15);
+  --color-fd-accent-foreground: #0891b2;
+  
+  /* Background and surface colors */
+  --color-fd-card: #ffffff;
+  --color-fd-card-muted: #f8f9fa;
+  --color-fd-muted: #f1f5f9;
+  --color-fd-muted-foreground: #64748b;
+  
+  /* Border colors */
+  --color-fd-border: #e2e8f0;
+  --color-fd-border-strong: #cbd5e1;
+  
+  /* Text colors */
+  --color-fd-foreground: #1e293b;
+  --color-fd-foreground-muted: #475569;
+  
+  /* Animation timings */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 350ms;
+  
+  /* Spacing system */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  
+  /* Shadow system */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-fd-card: #1a202c;
+  --color-fd-card-muted: #171923;
+  --color-fd-muted: #2d3748;
+  --color-fd-muted-foreground: #a0aec0;
+  --color-fd-border: #2d3748;
+  --color-fd-border-strong: #4a5568;
+  --color-fd-foreground: #f7fafc;
+  --color-fd-foreground-muted: #cbd5e1;
+  
+  /* Adjust primary and secondary for dark mode - more subdued to avoid being too bright */
+  --color-fd-primary: #06b6d4; /* Slightly more vibrant but not too bright teal for dark mode */
+  --color-fd-primary-foreground: #f8fafc;
+  --color-fd-primary-muted: rgba(6, 182, 212, 0.8);
+  --color-fd-primary-subtle: rgba(6, 182, 212, 0.15);
+  
+  --color-fd-secondary: #0ea5e9; /* Consistent blue for dark mode */
+  --color-fd-secondary-foreground: #f8fafc;
+  --color-fd-secondary-muted: rgba(14, 165, 233, 0.8);
+  --color-fd-secondary-subtle: rgba(14, 165, 233, 0.15);
+  
+  --color-fd-accent: rgba(6, 182, 212, 0.2);
+  --color-fd-accent-foreground: #0ea5e9;
+}
+
+/* Gradient text effect - using teal/blue gradient for a cleaner look */
+.gradient-text {
+  background: linear-gradient(to right, var(--color-fd-primary), var(--color-fd-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Hero section gradient - refined for better visual appeal */
+.hero-gradient {
+  background: radial-gradient(circle at 50% 50%, 
+    var(--color-fd-primary-subtle), 
+    var(--color-fd-secondary-subtle) 80%);
+}
+
+/* Grid pattern background */
+.grid-pattern {
+  --grid-color: color-mix(in oklab, var(--color-fd-primary) 10%, transparent);
+  background: repeating-linear-gradient(to right, var(--grid-color), var(--grid-color) 1px, transparent 1px, transparent 50px), 
+              repeating-linear-gradient(to bottom, var(--grid-color), var(--grid-color) 1px, transparent 1px, transparent 50px);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Terminal styling */
+.terminal-cursor {
+  display: inline-block;
+  width: 0.5rem;
+  height: 1rem;
+  background-color: var(--color-fd-primary);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Section dividers */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-fd-border-strong), transparent);
+  margin: var(--space-8) 0;
+}
+
+/* Button hover effects */
+.button-hover-slide {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.button-hover-slide::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  transition: height var(--transition-normal);
+  z-index: -1;
+}
+
+.button-hover-slide:hover::after {
+  height: 100%;
+}

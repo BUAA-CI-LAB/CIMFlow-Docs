@@ -1,0 +1,9 @@
+{
+  "title": "Framework",
+  "description": "The CIMFlow framework",
+  "icon": "Building2",
+  "root": true,
+  "pages": [
+    "index"
+  ]
+}

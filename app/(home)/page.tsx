@@ -372,7 +372,7 @@ function Footer() {
             <h3 className="mb-4 text-base font-semibold">Community</h3>
             <ul className="space-y-2 text-sm text-fd-muted-foreground">
               <li>
-                <Link href="https://github.com/" className="hover:text-fd-foreground transition-colors" target="_blank" rel="noopener noreferrer">
+                <Link href="https://github.com/BUAA-CI-LAB/CIMFlow" className="hover:text-fd-foreground transition-colors" target="_blank" rel="noopener noreferrer">
                   GitHub
                 </Link>
               </li>

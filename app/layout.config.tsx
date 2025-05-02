@@ -11,7 +11,7 @@ const logoImagePath = `${basePath}/assets/logo.svg`;
  * Docs Layout: app/docs/layout.tsx
  */
 export const baseOptions: BaseLayoutProps = {
-  githubUrl: 'https://github.com',
+  githubUrl: 'https://github.com/BUAA-CI-LAB/CIMFlow',
   nav: {
     title: (
       <>

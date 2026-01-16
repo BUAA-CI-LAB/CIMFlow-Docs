@@ -1,32 +1,68 @@
 ---
-title: CIMFlow Documentation
-description: An Integrated Framework for SRAM-based digital Compute-in-Memory Architectures
+title: Documentation
+description: Learn how to use the CIMFlow framework
 ---
 
-Welcome to the temporary home for CIMFlow’s documentation! We’re hard at work developing detailed guides and references for our framework.
+import { Boxes, Building2, Workflow, Play, BookOpen, Cpu, Layers, Code2, FileText, Github } from 'lucide-react';
 
-## About CIMFlow
+<div className="not-prose">
+  <div className="mb-10">
+    <h1 className="text-3xl font-semibold tracking-tight">CIMFlow Documentation</h1>
+    <div className="mt-3 text-fd-muted-foreground text-lg">An integrated framework for digital CIM accelerator design and simulation.</div>
+  </div>
 
-CIMFlow is a comprehensive framework for designing and analyzing SRAM-based Compute-in-Memory (CIM) architectures. It integrates:
-- A custom **Instruction Set Architecture (ISA)**
-- An **MLIR-based compiler** for efficient code generation
-- A **SystemC-based simulator** for architectural exploration and validation
+  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <a href="/docs/Framework" className="group block p-5 rounded-xl border border-fd-border hover:border-amber-500/50 hover:bg-fd-accent/30 transition-colors">
+      <Boxes className="size-6 text-amber-500 mb-3" />
+      <h2 className="font-semibold mb-1 group-hover:text-amber-500 transition-colors">Framework</h2>
+      <p className="text-fd-muted-foreground text-sm">Get started with CIMFlow</p>
+    </a>
+    <a href="/docs/Abstraction/ISA" className="group block p-5 rounded-xl border border-fd-border hover:border-blue-500/50 hover:bg-fd-accent/30 transition-colors">
+      <Building2 className="size-6 text-blue-500 mb-3" />
+      <h2 className="font-semibold mb-1 group-hover:text-blue-500 transition-colors">Abstraction</h2>
+      <p className="text-fd-muted-foreground text-sm">ISA, hardware model, and DSL</p>
+    </a>
+    <a href="/docs/Compiler" className="group block p-5 rounded-xl border border-fd-border hover:border-purple-500/50 hover:bg-fd-accent/30 transition-colors">
+      <Workflow className="size-6 text-purple-500 mb-3" />
+      <h2 className="font-semibold mb-1 group-hover:text-purple-500 transition-colors">Compiler</h2>
+      <p className="text-fd-muted-foreground text-sm">MLIR-based toolchain</p>
+    </a>
+    <a href="/docs/Simulator" className="group block p-5 rounded-xl border border-fd-border hover:border-emerald-500/50 hover:bg-fd-accent/30 transition-colors">
+      <Play className="size-6 text-emerald-500 mb-3" />
+      <h2 className="font-semibold mb-1 group-hover:text-emerald-500 transition-colors">Simulator</h2>
+      <p className="text-fd-muted-foreground text-sm">Cycle-accurate simulation</p>
+    </a>
+    <a href="/docs/Examples" className="group block p-5 rounded-xl border border-fd-border hover:border-rose-500/50 hover:bg-fd-accent/30 transition-colors">
+      <BookOpen className="size-6 text-rose-500 mb-3" />
+      <h2 className="font-semibold mb-1 group-hover:text-rose-500 transition-colors">Examples</h2>
+      <p className="text-fd-muted-foreground text-sm">Tutorials and demos</p>
+    </a>
+    <a href="https://arxiv.org/abs/2505.01107" target="_blank" rel="noopener noreferrer" className="group block p-5 rounded-xl border border-fd-border hover:border-fd-primary/50 hover:bg-fd-accent/30 transition-colors">
+      <FileText className="size-6 text-fd-muted-foreground group-hover:text-fd-primary mb-3 transition-colors" />
+      <h2 className="font-semibold mb-1 group-hover:text-fd-primary transition-colors">Paper</h2>
+      <p className="text-fd-muted-foreground text-sm">DAC'25 publication</p>
+    </a>
+  </div>
 
-## Documentation Status
-
-Our documentation is actively evolving. We plan to provide in-depth guidance on setup, configuration, optimization, and more. Although it’s still under construction, here’s a glimpse of what’s on the horizon:
-
-- **Getting Started Guide** – Step-by-step instructions to set up CIMFlow
-- **API Reference** – Descriptions of functions and interfaces
-- **Architecture Guide** – Insights into CIMFlow’s architecture abstraction and modular design
-- **Examples & Tutorials** – Practical, hands-on resources
-
-## Coming Soon
-
-- Additional demos showcasing how CIMFlow integrates with diverse DNN workloads  
-- Updated tutorials for best practices and design considerations  
-- Tools for performance benchmarking and visualization  
-
-## Stay Tuned
-
-We appreciate your patience as we work to finalize the codebase and documentation. Check back soon for new updates, or follow along to learn about upcoming releases and features. We look forward to sharing more details as development progresses.
+  <div className="mt-10 pt-8 border-t border-fd-border">
+    <h3 className="text-sm font-medium text-fd-muted-foreground uppercase tracking-wider mb-4">Quick Links</h3>
+    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+      <a href="/docs/Abstraction/ISA" className="flex items-center gap-2 text-fd-muted-foreground hover:text-fd-foreground transition-colors">
+        <Cpu className="size-4" />
+        <span>ISA Reference</span>
+      </a>
+      <a href="/docs/Abstraction/Hardware-Abstractions" className="flex items-center gap-2 text-fd-muted-foreground hover:text-fd-foreground transition-colors">
+        <Layers className="size-4" />
+        <span>Hardware Model</span>
+      </a>
+      <a href="/docs/Abstraction/DSL" className="flex items-center gap-2 text-fd-muted-foreground hover:text-fd-foreground transition-colors">
+        <Code2 className="size-4" />
+        <span>DSL Guide</span>
+      </a>
+      <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Docs" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-fd-muted-foreground hover:text-fd-foreground transition-colors">
+        <Github className="size-4" />
+        <span>View Docs on GitHub</span>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,776 @@
+---
+title: Scalar Operation
+description: Scalar arithmetic, load/store, and register move instructions
+---
+
+Scalar operations handle single-value computations: address calculations, loop counters, control flow, and configuration of the CIM and Vector units. They operate on two register files:
+
+- **GRF** (General Register File): 32 general-purpose registers (`$0`-`$31`) for arithmetic, addresses, and temporary values
+- **SRF** (Special Register File): Configuration registers that control CIM array dimensions, vector lengths, and compute modes
+
+---
+
+## Arithmetic
+
+### SC_RR
+
+Performs an arithmetic or logical operation on two source registers and writes the result to a destination register.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">10:6</div>
+    <div className="w-[18.75%] text-center py-1.5">5:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">100000</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">src1</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">src2</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">dest</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border bg-fd-muted/30">
+      <div className="font-mono text-fd-muted-foreground">—</div>
+      <div className="text-xs text-fd-muted-foreground">unused</div>
+    </div>
+    <div className="w-[18.75%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">funct</div>
+      <div className="text-xs text-fd-muted-foreground">op</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">SC_RR rs, rt, rd</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>GRF[rd] ← funct(GRF[rs], GRF[rt])</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Source Register 1</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">First operand from general register file</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Source Register 2</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Second operand from general register file</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Result register in general register file</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">funct</code>
+      <span className="text-xs text-fd-muted-foreground">Function Code (6 bits)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Specifies the arithmetic or logical operation to perform</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+### SC_RI
+
+Performs an operation using a register and an 11-bit signed immediate value (−1024 to 1023).
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[34.375%] text-center py-1.5">10:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">100100</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">src</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">dest</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">funct</div>
+      <div className="text-xs text-fd-muted-foreground">op</div>
+    </div>
+    <div className="w-[34.375%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">11-bit</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">SC_RI rs, rd, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>GRF[rd] ← funct(GRF[rs], imm)</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Source Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Operand from general register file</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Result register in general register file</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Immediate Value (11-bit signed)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Signed immediate operand (range: -1024 to 1023)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">funct</code>
+      <span className="text-xs text-fd-muted-foreground">Function Code (5 bits)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Specifies the arithmetic or logical operation to perform</div>
+  </div>
+</div>
+
+</Accordion>
+
+<Accordion title="Function Codes">
+
+<div className="not-prose grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">ADD</span>
+      <code className="text-sm text-fd-muted-foreground">000000</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Addition</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">SUB</span>
+      <code className="text-sm text-fd-muted-foreground">000001</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Subtraction</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">MUL</span>
+      <code className="text-sm text-fd-muted-foreground">000010</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Multiplication</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">DIV</span>
+      <code className="text-sm text-fd-muted-foreground">000011</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Division</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">SLL</span>
+      <code className="text-sm text-fd-muted-foreground">000100</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Shift left</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">SRL</span>
+      <code className="text-sm text-fd-muted-foreground">000101</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Shift right logical</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">SRA</span>
+      <code className="text-sm text-fd-muted-foreground">000110</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Shift right arithmetic</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">MOD</span>
+      <code className="text-sm text-fd-muted-foreground">000111</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Modulo</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">MIN</span>
+      <code className="text-sm text-fd-muted-foreground">001000</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Minimum</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">MAX</span>
+      <code className="text-sm text-fd-muted-foreground">001001</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Maximum</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">AND</span>
+      <code className="text-sm text-fd-muted-foreground">001010</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Bitwise AND</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">OR</span>
+      <code className="text-sm text-fd-muted-foreground">001011</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Bitwise OR</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">EQ</span>
+      <code className="text-sm text-fd-muted-foreground">001100</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Equal (1/0)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">NE</span>
+      <code className="text-sm text-fd-muted-foreground">001101</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Not equal</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">GT</span>
+      <code className="text-sm text-fd-muted-foreground">001110</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Greater than</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between">
+      <span className="font-mono font-semibold text-fd-primary">LT</span>
+      <code className="text-sm text-fd-muted-foreground">001111</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Less than</div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">SRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Special Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Special register to configure CIM or Vector unit parameters</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Immediate Value (21-bit unsigned)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Configuration value (range: 0 to 2,097,151)</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout>
+Append **I** for immediate variants (e.g., `ADD` → `ADDI`)
+</Callout>
+
+</Accordion>
+</Accordions>
+
+---
+
+## Memory
+
+### SC_LD
+
+Loads a value from local memory into a general register using base+offset addressing.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[50%] text-center py-1.5">15:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">101000</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">base</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">dest</div>
+    </div>
+    <div className="w-[50%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">16-bit offset</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">SC_LD rs, rd, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>GRF[rd] ← MEM[GRF[rs] + imm]</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Base Address Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base memory address from general register</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Register to receive the loaded value</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Offset (16-bit signed)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Byte offset added to base address</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+### SC_ST
+
+Stores a register value to local memory using base+offset addressing.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[50%] text-center py-1.5">15:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">101001</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">base</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">src</div>
+    </div>
+    <div className="w-[50%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">16-bit offset</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">SC_ST rs, rt, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>MEM[GRF[rs] + imm] ← GRF[rt]</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Base Address Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base memory address from general register</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Source Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Register containing the value to store</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Offset (16-bit signed)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Byte offset added to base address</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+---
+
+## Immediate Load
+
+### G_LI
+
+Loads a 21-bit unsigned immediate (0 to 2,097,151) directly into a general register.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[65.625%] text-center py-1.5">20:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">101100</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">dest</div>
+    </div>
+    <div className="w-[65.625%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">21-bit</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">G_LI rd, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>GRF[rd] ← imm</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">General register to receive the immediate value</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Immediate Value (21-bit unsigned)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Unsigned immediate value (range: 0 to 2,097,151)</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+### S_LI
+
+Loads a 21-bit immediate into a special register. Used to configure CIM array and Vector unit parameters before compute operations.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[65.625%] text-center py-1.5">20:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">101101</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">dest</div>
+    </div>
+    <div className="w-[65.625%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">21-bit</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">S_LI rd, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>SRF[rd] ← imm</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">SRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Special Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Special register to configure CIM or Vector unit parameters</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Immediate Value (21-bit unsigned)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Configuration value (range: 0 to 2,097,151)</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout>
+See [Register Files](/docs/Abstraction/Instruction-Design/Register-Files#special-register-file-srf) for the SRF register map.
+</Callout>
+
+---
+
+## Register Move
+
+### GS_MOV
+
+Copies a value from a general register to a special register. Use when the configuration value is computed at runtime.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[50%] text-center py-1.5">15:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">101110</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">GRF</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">SRF</div>
+    </div>
+    <div className="w-[50%] py-3 bg-fd-muted/30 border-l border-fd-border">
+      <div className="font-mono text-fd-muted-foreground">—</div>
+      <div className="text-xs text-fd-muted-foreground">reserved</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">GS_MOV rs, rd</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>SRF[rd] ← GRF[rs]</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Source General Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">General register containing the value to copy</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">SRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination Special Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Special register to receive the configuration value</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+### SG_MOV
+
+Copies a value from a special register to a general register. Use to read configuration state or status values.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[50%] text-center py-1.5">15:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">101111</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">SRF</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">GRF</div>
+    </div>
+    <div className="w-[50%] py-3 bg-fd-muted/30 border-l border-fd-border">
+      <div className="font-mono text-fd-muted-foreground">—</div>
+      <div className="text-xs text-fd-muted-foreground">reserved</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">SG_MOV rs, rd</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>GRF[rd] ← SRF[rs]</code>
+    </div>
+  </div>
+</div>
+
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">SRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Source Special Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Special register containing the configuration or status value</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Destination General Register</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">General register to receive the value</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+---
+
+## Examples
+
+```asm
+; Register-register operations (rd, rs, rt)
+SC_ADD r3, r1, r2          ; r3 = r1 + r2
+SC_SUB r5, r3, r4          ; r5 = r3 - r4
+SC_MAX r6, r2, r3          ; r6 = max(r2, r3)
+SC_EQ  r7, r1, r2          ; r7 = (r1 == r2)
+SC_MUL r8, r4, r5          ; r8 = r4 * r5
+SC_AND r9, r6, r7          ; r9 = r6 & r7
+
+; Register-immediate operations (rd, rs, imm)
+SC_ADDI r8, r8, -8         ; r8 = r8 - 8 (signed imm)
+SC_SLLI r9, r9, 1          ; r9 = r9 << 1 (multiply by 2)
+SC_ANDI r10, r10, 255      ; r10 = r10 & 0xFF (mask low 8 bits)
+SC_ORI  r11, r11, 128      ; r11 = r11 | 0x80
+
+; Base+offset memory access
+G_LI   r1, 0x1000          ; Load base address into r1
+SC_LD  r2, 0(r1)           ; r2 = MEM[r1 + 0]
+SC_LD  r3, 4(r1)           ; r3 = MEM[r1 + 4]
+SC_ST  r2, 64(r1)          ; MEM[r1 + 64] = r2
+SC_ST  r0, -16(r1)         ; MEM[r1 - 16] = r0
+
+; CIM / Vector configuration via SRF moves
+S_LI   CIM_IBW, 8          ; CIM_IBW = 8
+S_LI   CIM_OBW, 16         ; CIM_OBW = 16
+G_LI   r10, 256            ; Compute value in GRF
+GS_MOV CIM_AG, r10         ; CIM_AG = r10
+SG_MOV r11, CIM_IBW        ; r11 = CIM_IBW (read back)
+```

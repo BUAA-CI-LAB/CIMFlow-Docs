@@ -1,0 +1,123 @@
+---
+title: Instruction Design
+description: CIMFlow's 32-bit instruction format and register organization
+---
+
+CIMFlow uses a unified **32-bit instruction format** with specialized encodings for different operation types: compute, communication, and control flow.
+
+---
+
+## Instruction Format
+
+All instructions are 32 bits with a 6-bit opcode. The remaining 26 bits vary by encoding type. See [Instruction Set](/docs/Abstraction/Instruction-Design/Instruction-Set) for the complete instruction list.
+
+Each instruction contains:
+- **Opcode** (6 bits): Operation identifier
+- **Operand fields** (5 bits each): Register addresses (`rs`, `rt`, `rd`, `re`, `rf`)
+- **Tail field** (variable width): Function code, flags, or immediate value
+
+<style>{`
+  .table_enc {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table_enc th,
+  .table_enc td {
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+  }
+  .table_enc code {
+    background: none;
+    padding: 0;
+    font-size: 0.85rem;
+  }
+  .type-r { border-left: 3px solid #8b5cf6; }
+  .type-ia { border-left: 3px solid #06b6d4; }
+  .type-ib { border-left: 3px solid #14b8a6; }
+  .type-ic { border-left: 3px solid #10b981; }
+  .type-j { border-left: 3px solid #f97316; }
+`}</style>
+
+<table className="table_enc">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>31:26</th>
+      <th>25:21</th>
+      <th>20:16</th>
+      <th>15:11</th>
+      <th>10:6</th>
+      <th>5:0</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="type-r">
+      <td><code>R</code></td>
+      <td><code>opcode</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td><code>re/rf</code></td>
+      <td><code>tail</code></td>
+    </tr>
+    <tr className="type-ia">
+      <td><code>I-A</code></td>
+      <td><code>opcode</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt/rd</code></td>
+      <td><code>rd/funct</code></td>
+      <td colSpan={2}><code>imm</code></td>
+    </tr>
+    <tr className="type-ib">
+      <td><code>I-B</code></td>
+      <td><code>opcode</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td colSpan={3}><code>imm</code></td>
+    </tr>
+    <tr className="type-ic">
+      <td><code>I-C</code></td>
+      <td><code>opcode</code></td>
+      <td><code>rd</code></td>
+      <td colSpan={4}><code>imm</code></td>
+    </tr>
+    <tr className="type-j">
+      <td><code>J</code></td>
+      <td><code>opcode</code></td>
+      <td colSpan={5}><code>imm</code></td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Instruction Categories
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Compute</div>
+    <div className="text-sm text-fd-muted-foreground">CIM matrix ops, vector element-wise, scalar arithmetic</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Communication</div>
+    <div className="text-sm text-fd-muted-foreground">Inter-core data movement, memory load/store</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Control Flow</div>
+    <div className="text-sm text-fd-muted-foreground">Branches, loops, synchronization barriers</div>
+  </div>
+</div>
+
+---
+
+## Register Files
+
+### General Register File (GRF)
+
+32 registers (`r0`-`r31`) encoded with 5-bit addresses for arithmetic, address calculation, and temporary storage.
+
+### Special Register File (SRF)
+
+32 registers split between CIM unit (IDs 0-15) for array configuration and Vector unit (IDs 16-31) for activation and reduction parameters. See [Register Files](/docs/Abstraction/Instruction-Design/Register-Files) for the complete register map.

@@ -1,0 +1,231 @@
+---
+title: Quick Start
+description: Run an end-to-end pipeline with one command
+icon: Play
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Clock, ArrowRight } from 'lucide-react';
+
+<div className="not-prose flex items-center gap-2 mb-6 text-sm text-fd-muted-foreground">
+  <Clock className="size-4" />
+  <span>Estimated time: ~3 minutes</span>
+</div>
+
+This tutorial demonstrates running ResNet-18 through the complete CIMFlow pipeline with a single command.
+
+<Callout type="warn">
+**Prerequisite**: Complete the [Docker Tutorial](/docs/Examples/docker-tutorial) first, or ensure CIMFlow is [installed locally](/docs/Framework/installation).
+</Callout>
+
+---
+
+## The Pipeline Command
+
+CIMFlow compiles ONNX models to CIM hardware instructions and simulates execution. The `run pipeline` command handles the complete flow:
+
+<div className="not-prose flex flex-wrap items-center justify-center gap-2 my-6 text-sm">
+  <div className="rounded-lg border border-fd-border px-3 py-2 bg-fd-card shadow-sm font-medium">ONNX Model</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-3 py-2 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">CG Compile</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-3 py-2 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">OP Compile</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-3 py-2 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Simulate</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-border px-3 py-2 bg-fd-card shadow-sm font-medium">Report</div>
+</div>
+
+---
+
+## Running the Pipeline
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Configure Parameters
+
+For this example, we use the following configuration:
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| Model | ResNet-18 | Standard CNN architecture |
+| T | 8 | Macro group size |
+| K | 16 | Macro group number |
+| B | 16 | NoC bandwidth (flits) |
+| C | 64 | Core count |
+| Batch Size | 8 | Inference batch |
+
+#### Execute the Pipeline
+
+```bash
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/quickstart \
+    -t 8 -k 16 -b 16 -c 64 \
+    --batch-size 8
+```
+
+<Callout type="info">
+**What happens during execution:**
+- **CG stage**: Progress bar shows graph partitioning into execution stages
+- **OP stage**: Progress bar shows per-core instruction generation
+- **Simulation**: Cycle-accurate execution across all cores
+</Callout>
+
+#### View Results
+
+After completion, check the output:
+
+```bash
+ls output/quickstart/
+```
+
+</div>
+
+---
+
+## Understanding the Results
+
+The simulation produces a report with key performance metrics:
+
+```text title="simulation_report_*.txt"
+Simulation Result:
+  - latency:            2.08837 ms
+  - average power:      4420.4895 mW
+  - total energy:       9231608896.0073 pJ/it
+  - TOPS:               0.5319
+  - TOPS/W:             0.1203
+```
+
+### Metric Definitions
+
+| Metric | Description |
+|--------|-------------|
+| **Latency** | End-to-end inference time for one batch |
+| **Average Power** | Power consumption during inference |
+| **Total Energy** | Energy consumed per inference iteration |
+| **TOPS** | Tera operations per second (throughput) |
+| **TOPS/W** | Energy efficiency (throughput per watt) |
+
+---
+
+## What Just Happened
+
+The pipeline executed three stages:
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">1. CG Compilation</div>
+    <ul className="text-sm text-fd-muted-foreground space-y-1 list-disc list-inside">
+      <li>Parsed the ONNX model</li>
+      <li>Created compute graph representation</li>
+      <li>Partitioned computation for CIM architecture</li>
+    </ul>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">2. OP Compilation</div>
+    <ul className="text-sm text-fd-muted-foreground space-y-1 list-disc list-inside">
+      <li>Generated ISA instructions for each core</li>
+      <li>Handled memory allocation and data movement</li>
+      <li>Optimized instruction scheduling</li>
+    </ul>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">3. Simulation</div>
+    <ul className="text-sm text-fd-muted-foreground space-y-1 list-disc list-inside">
+      <li>Cycle-accurate simulation of CIM hardware</li>
+      <li>Modeled all 64 cores in parallel</li>
+      <li>Tracked power and energy consumption</li>
+    </ul>
+  </div>
+</div>
+
+---
+
+## Adjusting Parameters
+
+Experiment with different configurations:
+
+<Tabs items={['Different Bandwidth', 'Larger Batch']}>
+<Tab value="Different Bandwidth">
+```bash title="Reduce NoC bandwidth to 8 flits"
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/test_b8 \
+    -t 8 -k 16 -b 8 -c 64 \
+    --batch-size 8
+```
+
+Lower bandwidth increases communication latency but reduces hardware cost.
+</Tab>
+<Tab value="Larger Batch">
+```bash title="Larger batch for higher throughput"
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/test_batch16 \
+    -t 8 -k 16 -b 16 -c 64 \
+    --batch-size 16
+```
+
+Larger batches improve throughput by better utilizing the multi-core parallelism.
+</Tab>
+</Tabs>
+
+---
+
+## Trying Different Models
+
+Run with MobileNetV2:
+
+```bash
+cimflow run pipeline \
+    -m data/models/mobilenetv2.onnx \
+    -o output/mobilenet \
+    -t 8 -k 16 -b 16 -c 64 \
+    --batch-size 8
+```
+
+---
+
+## Keeping Intermediate Files
+
+Use `--keep-ir` to preserve all intermediate representations:
+
+```bash title="Keep all intermediate files"
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/debug \
+    -t 8 -b 16 \
+    --keep-ir
+```
+
+<Callout type="idea" title="What gets saved">
+- **CG instructions** (JSON) - High-level compute graph operations
+- **ISA instructions** (JSON and assembly) - Per-core instruction sequences
+- **Detailed logs** - Compilation and simulation traces
+</Callout>
+
+---
+
+## Verbose Output
+
+Enable detailed logging to see compilation progress:
+
+```bash title="Enable verbose logging"
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/verbose \
+    -t 8 -b 16 \
+    -l VERBOSE
+```
+
+Log levels (from most to least verbose): `TRACE` | `DEBUG` | `VERBOSE` | `INFO` | `WARNING` | `ERROR`
+
+---
+
+## What You Learned
+
+- **Pipeline Execution** — Run end-to-end compilation and simulation with one command
+- **Results Interpretation** — Understand latency, power, TOPS, and efficiency metrics
+

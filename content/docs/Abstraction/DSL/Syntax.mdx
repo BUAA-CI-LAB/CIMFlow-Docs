@@ -1,0 +1,152 @@
+---
+title: Syntax
+description: Control flow, slicing, and expressions in CIM-DSL
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+---
+
+## Slicing
+
+NumPy-style slicing with `start:end:step` syntax for accessing tensor elements:
+
+```c
+src = Buffer(<4, 8>, int8, __INPUT_MEMORY__);
+
+slice_1 = src[1, :4];      // Row 1, columns 0-3
+slice_2 = src[1:3, :];     // Rows 1-2, all columns
+slice_3 = src[::2, ::2];   // Every 2nd element
+```
+
+<Callout type="info">
+All parameters are optional. Omitted values default to `0` for start, dimension size for end, and `1` for step.
+</Callout>
+
+---
+
+## For Loops
+
+Python-like `range()` with a required `carry` clause for loop-carried variables:
+
+<Tabs items={['Basic Loop', 'With Step', 'Carry Variables']}>
+  <Tab value="Basic Loop">
+```c
+for i in range(10) carry () {
+    Print(i);
+};
+```
+  </Tab>
+  <Tab value="With Step">
+```c
+for i in range(0, 10, 2) carry () {
+    Print(i);  // 0, 2, 4, 6, 8
+};
+```
+  </Tab>
+  <Tab value="Carry Variables">
+```c
+a = 1;
+b = 1;
+for i in range(6) carry (a, b) {
+    c = a + b;
+    a = b;
+    b = c;
+};
+```
+  </Tab>
+</Tabs>
+
+### Loop Unrolling
+
+Apply the `@unroll` decorator to duplicate the loop body at compile time:
+
+```c
+@unroll
+for i in range(4) carry () {
+    // Body duplicated 4 times
+};
+```
+
+<Callout type="info">
+All statements end with `;` including loop and conditional blocks.
+</Callout>
+
+---
+
+## Conditionals
+
+```c
+if (x == 1) carry () {
+    // then branch
+} else {
+    // else branch
+};
+```
+
+---
+
+## Operators
+
+### Comparison
+
+<div className="not-prose grid gap-2 grid-cols-4 sm:grid-cols-7 my-6">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">==</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Equal</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">!=</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Not equal</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">&lt;&lt;</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Less than</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">&gt;&gt;</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Greater than</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">&lt;=</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Less or equal</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">&gt;=</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Greater or equal</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">&amp;&amp;</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Logical AND</div>
+  </div>
+</div>
+
+<Callout type="warn">
+`<<` and `>>` are comparison operators, not bit shifts.
+</Callout>
+
+### Arithmetic
+
+<div className="not-prose grid gap-2 grid-cols-5 my-6">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">+</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Add</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">-</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Subtract</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">*</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Multiply</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">/</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Divide</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card text-center">
+    <code className="text-lg font-semibold text-fd-primary">%</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Modulo</div>
+  </div>
+</div>

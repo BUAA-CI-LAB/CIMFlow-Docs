@@ -1,0 +1,127 @@
+---
+title: What is CIMFlow?
+description: Understanding CIMFlow's architecture and design philosophy
+icon: CircleHelp
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+**Compute-in-Memory (CIM)** is a computing paradigm where data processing occurs directly within memory arrays, eliminating the energy-intensive data movement between separate memory and processing units. SRAM-based CIM accelerators have emerged as promising solutions for neural network inference, offering significant improvements in energy efficiency and throughput compared to conventional architectures.
+
+CIMFlow addresses the challenge of evaluating CIM accelerator designs before hardware implementation. The framework provides an integrated toolchain that compiles neural network models to CIM-specific instructions and simulates their execution with cycle-accurate timing.
+
+---
+
+## Framework Overview
+
+<div className="not-prose my-6">
+  <figure>
+    <img
+      src="/images/overview.svg"
+      alt="CIMFlow Framework Overview"
+      className="w-full rounded-lg dark:invert"
+    />
+    <figcaption className="mt-2 text-sm text-fd-muted-foreground text-center">CIMFlow transforms ONNX models through two-level compilation, then executes instructions on a cycle-accurate simulator.</figcaption>
+  </figure>
+</div>
+
+### Two-Level Compiler
+
+[The compiler](/docs/Compiler) separates workload partitioning from code generation, enabling optimization at both the graph and operator levels.
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">CG-Level (Computational Graph)</div>
+    <div className="text-sm text-fd-muted-foreground">Partitions workloads across cores via dependency analysis and NoC-aware scheduling</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">OP-Level (Operator)</div>
+    <div className="text-sm text-fd-muted-foreground">Generates executable instructions from operators using LLVM/MLIR infrastructure</div>
+  </div>
+</div>
+
+### Instruction Set Architecture
+
+CIMFlow defines a flexible [32-bit ISA](/docs/Abstraction/ISA) with hierarchical hardware abstraction spanning chip, core, and unit levels.
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Hardware Abstraction</div>
+    <div className="text-sm text-fd-muted-foreground">Three-level hierarchy (Chip → Core → Unit) with configurable parameters</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Instruction Design</div>
+    <div className="text-sm text-fd-muted-foreground">Unified 32-bit format for CIM, vector, and scalar operations</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Register Files</div>
+    <div className="text-sm text-fd-muted-foreground">General and special registers for addresses and CIM configuration</div>
+  </div>
+</div>
+
+### Cycle-Accurate Simulator
+
+[The simulator](/docs/Simulator) provides cycle-accurate performance analysis through detailed modeling of the digital CIM architecture.
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">SystemC Implementation</div>
+    <div className="text-sm text-fd-muted-foreground">Event-driven simulation with cycle-accurate timing</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Pipeline Model</div>
+    <div className="text-sm text-fd-muted-foreground">Three-stage pipeline (IF/DE/EX) with instruction-level parallelism</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Performance Metrics</div>
+    <div className="text-sm text-fd-muted-foreground">Energy consumption, execution latency, and hardware utilization</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Modular Design</div>
+    <div className="text-sm text-fd-muted-foreground">Configurable architecture through user-defined configuration files</div>
+  </div>
+</div>
+
+---
+
+## Use Cases
+
+<Accordions>
+  <Accordion title="Architecture Exploration">
+    CIMFlow enables rapid evaluation of CIM configurations by varying parameters such as macro group configuration (T, K), core count, memory capacity, and NoC bandwidth to understand their impact on performance and energy efficiency for specific workloads.
+  </Accordion>
+  <Accordion title="Performance Benchmarking">
+    The framework provides detailed performance metrics for neural network models on CIM hardware, enabling comparison of models, quantization schemes, and mapping strategies to identify optimal deployment configurations.
+  </Accordion>
+  <Accordion title="Energy Analysis">
+    CIMFlow tracks energy consumption across different architectural components, enabling hardware designers to evaluate energy efficiency and make informed decisions before committing to silicon implementation.
+  </Accordion>
+  <Accordion title="Compiler Development">
+    The modular architecture supports experimentation with new compilation strategies, enabling development and evaluation of custom optimization passes for workload partitioning, memory management, and instruction scheduling.
+  </Accordion>
+</Accordions>
+
+---
+
+## Citation
+
+CIMFlow was presented at the 62nd ACM/IEEE Design Automation Conference (DAC 2025). If you use CIMFlow in your research, please cite:
+
+```bibtex
+@inproceedings{qi2025cimflow,
+  title={CIMFlow: An Integrated Framework for Systematic Design and
+         Evaluation of Digital CIM Architectures},
+  author={Qi, Yingjie and Yang, Jianlei and Wang, Yiou and Wang, Yikun
+          and Wang, Dayu and Tang, Ling and Duan, Cenlin and He, Xiaolin
+          and Zhao, Weisheng},
+  booktitle={2025 62nd ACM/IEEE Design Automation Conference (DAC)},
+  pages={1--7},
+  year={2025},
+  doi={10.1109/DAC63849.2025.11133270}
+}
+```
+
+<Callout type="info">
+The full paper is available on [arXiv](https://arxiv.org/abs/2505.01107).
+</Callout>

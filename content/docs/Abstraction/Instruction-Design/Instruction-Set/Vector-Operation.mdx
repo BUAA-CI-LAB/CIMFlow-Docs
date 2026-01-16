@@ -1,0 +1,477 @@
+---
+title: Vector Operation
+description: SIMD vector operations and reduction instructions
+---
+
+Vector operations enable Single Instruction, Multiple Data (SIMD) processing for efficient parallel computation on arrays. These instructions support element-wise operations, activation functions, quantization, and aggregation across vector elements.
+
+---
+
+## VEC_OP
+
+Performs SIMD operations on 1-4 input vectors, applying the same operation to corresponding elements in parallel. Supports various functions including activation functions (ReLU), quantization, and arithmetic operations.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">10:6</div>
+    <div className="w-[18.75%] text-center py-1.5">5:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">01XY00</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">input 1</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">input 2</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">output</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">re</div>
+      <div className="text-xs text-fd-muted-foreground">length</div>
+    </div>
+    <div className="w-[18.75%] py-3 border-l border-fd-border bg-fd-accent/15">
+      <div className="font-mono font-medium">funct</div>
+      <div className="text-xs text-fd-muted-foreground">operation</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">VEC_OP_Z rs, rt, rd, re</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>MEM[GRF[rd]] ← funct(inputs, GRF[re])</code>
+    </div>
+  </div>
+</div>
+
+### Input Vector Modes
+
+In the instruction syntax, `Z` determines the number of input vectors. 
+`Z` corresponds to the opcode bits `XY`:
+
+<div className="not-prose grid gap-2 sm:grid-cols-2 lg:grid-cols-4 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">01<span className="text-orange-500">00</span>00</span>
+      <code className="text-sm text-fd-muted-foreground">Z=0</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">1 input vector</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Unary operations</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">01<span className="text-orange-500">01</span>00</span>
+      <code className="text-sm text-fd-muted-foreground">Z=1</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">2 input vectors</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Binary operations</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">01<span className="text-orange-500">10</span>00</span>
+      <code className="text-sm text-fd-muted-foreground">Z=2</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">3 input vectors</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Ternary operations</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">01<span className="text-orange-500">11</span>00</span>
+      <code className="text-sm text-fd-muted-foreground">Z=3</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">4 input vectors</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Quaternary ops</div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Input Vector 1 Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base address of the first input vector in memory</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Input Vector 2 Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base address of the second input vector (for ≥2 inputs)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Output Vector Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Destination address for the result vector</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[re]</code>
+      <span className="text-xs text-fd-muted-foreground">Vector Length</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Number of elements to process in each vector</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm col-span-2">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">funct</code>
+      <span className="text-xs text-fd-muted-foreground">Function Code (6 bits)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Specifies the operation to apply to vector elements (RELU, QUAN, ADD, etc.)</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout type="info">
+For operations with >2 input vectors, addresses for vectors 3 and 4 are sourced from dedicated vector registers configured separately.
+</Callout>
+
+### Function Codes
+
+Complete list of SIMD vector operation function codes (funct field) as defined in the implementation:
+
+<div className="not-prose grid gap-2 sm:grid-cols-2 lg:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_ADD</span>
+      <code className="text-sm text-fd-muted-foreground">0</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector addition</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Element-wise addition</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_SC_ADD</span>
+      <code className="text-sm text-fd-muted-foreground">1</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Scalar addition</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Add scalar to vector</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_MUL</span>
+      <code className="text-sm text-fd-muted-foreground">2</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector multiplication</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Element-wise multiplication</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_QUANTIZE</span>
+      <code className="text-sm text-fd-muted-foreground">3</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Quantization</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Convert to lower precision</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_RESADD_QUANTIZE</span>
+      <code className="text-sm text-fd-muted-foreground">4</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Residual add + quantize</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Fused operation</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_RESMUL_QUANTIZE</span>
+      <code className="text-sm text-fd-muted-foreground">5</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Residual mul + quantize</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Fused operation</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_VVMAX</span>
+      <code className="text-sm text-fd-muted-foreground">6</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector maximum</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Element-wise maximum</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_VSMUL</span>
+      <code className="text-sm text-fd-muted-foreground">7</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector-scalar multiply</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Multiply vector by scalar</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_VFLOOR</span>
+      <code className="text-sm text-fd-muted-foreground">8</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector floor</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Floor operation</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_VSET</span>
+      <code className="text-sm text-fd-muted-foreground">9</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector set</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Set vector values</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_SOFTMAX</span>
+      <code className="text-sm text-fd-muted-foreground">10</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Softmax activation</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Normalized exponential</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_REDUCE_MAX</span>
+      <code className="text-sm text-fd-muted-foreground">11</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Reduce maximum</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Find max element</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_V_EXP</span>
+      <code className="text-sm text-fd-muted-foreground">12</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector exponential</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">e^x operation</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_REDUCE_SUM</span>
+      <code className="text-sm text-fd-muted-foreground">13</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Reduce sum</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Sum all elements</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_VS_DIV</span>
+      <code className="text-sm text-fd-muted-foreground">14</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector-scalar divide</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Divide vector by scalar</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_VS_SUB</span>
+      <code className="text-sm text-fd-muted-foreground">15</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector-scalar subtract</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Subtract scalar from vector</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_SQRT</span>
+      <code className="text-sm text-fd-muted-foreground">16</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector square root</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Element-wise sqrt</div>
+  </div>
+  
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">VEC_GELU</span>
+      <code className="text-sm text-fd-muted-foreground">17</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">GELU activation</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">Gaussian Error Linear Unit</div>
+  </div>
+</div>
+
+
+---
+
+## REDUCE
+
+Performs reduction operations that aggregate vector elements into a single scalar value. Commonly used for computing sums, finding extrema, or other aggregate statistics across arrays.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">10:6</div>
+    <div className="w-[18.75%] text-center py-1.5">5:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">010001</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">input addr</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">length</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">output addr</div>
+    </div>
+    <div className="w-[15.625%] py-3 bg-fd-muted/30 border-l border-fd-border">
+      <div className="font-mono text-fd-muted-foreground">0</div>
+      <div className="text-xs text-fd-muted-foreground">reserved</div>
+    </div>
+    <div className="w-[18.75%] py-3 border-l border-fd-border bg-fd-accent/15">
+      <div className="font-mono font-medium">funct</div>
+      <div className="text-xs text-fd-muted-foreground">operation</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">REDUCE_OP rs, rt, rd</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>MEM[GRF[rd]] ← reduce(MEM[GRF[rs]:GRF[rt]], funct)</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Input Vector Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base address of the input vector to reduce</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Vector Length</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Number of elements to aggregate</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Output Scalar Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Memory address for the scalar result</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+### Reduction Functions
+
+<div className="not-prose grid gap-2 sm:grid-cols-2 lg:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">REDUCE_MAX</span>
+      <code className="text-sm text-fd-muted-foreground">000000</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Reduce to maximum value</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">out = max(in[0..n-1])</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">REDUCE_SUM</span>
+      <code className="text-sm text-fd-muted-foreground">000001</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Reduce to sum</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">out = Σ in[0..n-1]</div>
+  </div>
+</div>
+
+<Callout type="info">
+Reduction operations produce a single scalar output regardless of input vector size, enabling efficient aggregation computations.
+</Callout>
+
+---
+
+## Examples
+
+```asm
+; Vector add (2 inputs)
+G_LI r1, 0x1000           ; Vector a address
+G_LI r2, 0x2000           ; Vector b address
+G_LI r3, 0x3000           ; Output vector address
+G_LI r4, 256              ; Vector length
+VEC_ADD_1 r3, r1, r2, r4  ; input_num=2 (Z=1)
+
+; GELU activation (unary, placeholder r0)
+G_LI r5, 0x4000           ; Input vector
+G_LI r6, 0x5000           ; Output vector
+G_LI r7, 256              ; Length
+VEC_GELU_0 r6, r5, r0, r7 ; input_num=1 (Z=0)
+
+; Quantize to INT8 (unary)
+G_LI r8, 0x6000           ; FP32 input
+G_LI r9, 0x7000           ; INT8 output
+G_LI r10, 512             ; Length
+VEC_QUANTIZE_0 r9, r8, r0, r10 ; input_num=1 (Z=0)
+
+; Softmax with max reduction
+G_LI r11, 0x8000          ; Logits vector
+G_LI r12, 256             ; Classes/length
+G_LI r13, 0x8100          ; Temp scalar addr for max
+REDUCE_MAX r13, r11, r12
+G_LI r14, 0x8200          ; Output probabilities
+VEC_SOFTMAX_0 r14, r11, r0, r12 ; input_num=1 (Z=0)
+
+; Vector-scalar multiply
+G_LI r15, 0x9000          ; Input vector
+G_LI r16, 0xA000          ; Output vector
+G_LI r17, 128             ; Length
+G_LI r18, 0x3F800000      ; Scalar in GRF (1.0 as bits)
+VEC_VSMUL_1 r16, r15, r18, r17 ; input_num=2 (Z=1)
+
+; Reduce sum to scalar
+G_LI r19, 0xB000          ; Input vector
+G_LI r20, 512             ; Length
+G_LI r21, 0xB800          ; Output scalar addr
+REDUCE_SUM r21, r19, r20
+
+; Element-wise max of two vectors
+G_LI r22, 0xC000          ; Vector a
+G_LI r23, 0xD000          ; Vector b
+G_LI r24, 0xE000          ; Output vector
+G_LI r25, 256             ; Length
+VEC_VVMAX_1 r24, r22, r23, r25 ; input_num=2 (Z=1)
+```

@@ -1,0 +1,291 @@
+---
+title: Inter-Core Synchronization
+description: Multi-core synchronization and barrier instructions
+---
+
+Inter-core synchronization instructions provide fine-grained coordination primitives for multi-core systems, enabling both pairwise synchronization and collective barrier operations across multiple cores.
+
+---
+
+## WAIT
+
+Performs pairwise synchronization between cores. The current core blocks until a specified synchronization point is reached, with flexible control over which core(s) to wait for and expected write count.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[34.375%] text-center py-1.5">10:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">111101</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">source id</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">sync id</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">expected writes</div>
+    </div>
+    <div className="w-[34.375%] py-3 bg-fd-muted/30 border-l border-fd-border">
+      <div className="font-mono text-fd-muted-foreground">0</div>
+      <div className="text-xs text-fd-muted-foreground">reserved</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">WAIT rs, rt, rd</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>Block until sync point GRF[rt] on core GRF[rs] with GRF[rd] expected writes</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Source Core ID</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">The ID of the remote core(s) to wait for. Use 0 to wait for global memory or any core.</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Sync ID</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Synchronization point identifier. The current core will block until a TAG with this sync ID is executed on the source core.</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rd]</code>
+      <span className="text-xs text-fd-muted-foreground">Expected Writes</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Number of expected write operations from the source core before unblocking. Used for ordering guarantees.</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout type="info">
+WAIT works in conjunction with TAG for producer-consumer synchronization. When GRF[rs] is 0, WAIT blocks until global synchronization; when set to a specific core ID, it waits for that core's TAG.
+</Callout>
+
+---
+
+## BARRIER
+
+Performs a collective synchronization across multiple cores using a barrier protocol. All participating cores must reach the barrier before any can proceed, ensuring global consistency in multi-core computations.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[50%] text-center py-1.5">15:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">111110</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">num cores</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">barrier ID</div>
+    </div>
+    <div className="w-[50%] py-3 bg-fd-muted/30 border-l border-fd-border">
+      <div className="font-mono text-fd-muted-foreground">0</div>
+      <div className="text-xs text-fd-muted-foreground">reserved</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">BARRIER rs, rt</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>Sync GRF[rs] cores at barrier GRF[rt]</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Number of Cores</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">The total number of cores participating in this barrier synchronization. All specified cores must reach the barrier before any can proceed.</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Barrier ID</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Unique identifier for this barrier instance. All participating cores must use the same barrier ID to synchronize correctly.</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout type="warn">
+All cores must execute BARRIER with identical `num_cores` and `barrier_id` values. Mismatched parameters will cause deadlock.
+</Callout>
+
+---
+
+## TAG
+
+Marks a synchronization point on the current core, signaling completion of work to other cores waiting via WAIT instruction.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[65.625%] text-center py-1.5">20:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">111111</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">sync id</div>
+    </div>
+    <div className="w-[65.625%] py-3 bg-fd-muted/30 border-l border-fd-border">
+      <div className="font-mono text-fd-muted-foreground">0</div>
+      <div className="text-xs text-fd-muted-foreground">reserved</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">TAG rs</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>Signal synchronization point with ID in GRF[rs]</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-1 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Sync ID</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Synchronization point identifier. Other cores using WAIT with the same sync ID will be unblocked when TAG is executed on this core.</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout type="info">
+TAG is used in conjunction with WAIT to implement producer-consumer synchronization patterns. A core signals completion of a phase by executing TAG, and other cores unblock by using WAIT with the same sync ID.
+</Callout>
+
+---
+
+## Examples
+
+```asm
+; Example 1: Point-to-point synchronization
+; Core 0: Producer
+G_LI  r1, 0x1000
+SC_ST r10, 0(r1)       ; Write data to memory
+G_LI  r5, 100          ; Sync ID
+TAG   r5               ; Signal completion
+
+; Core 1: Consumer
+G_LI  r1, 0            ; Source (any core/global)
+G_LI  r5, 100          ; Sync ID (must match TAG)
+G_LI  r6, 1            ; Expected writes
+WAIT  r1, r5, r6       ; Block until Core 0's TAG
+G_LI  r2, 0x1000
+SC_LD r11, 0(r2)       ; Read data (guaranteed visible)
+
+; Example 2: Multi-core synchronization (4 cores)
+; Each core executes this pattern
+G_LI  r10, 200         ; Sync ID base
+
+; Core 0, 1, 2, 3 all do some work
+; ... (computation code)
+
+; Core 0: Signal completion
+G_LI  r5, 200
+TAG   r5               ; Mark sync point
+
+; Other cores: Wait for all
+G_LI  r1, 0            ; Wait for any/all cores
+G_LI  r5, 200          ; Sync ID
+G_LI  r6, 4            ; Expect 4 cores
+WAIT  r1, r5, r6       ; Block until all 4 TAG
+
+; Continue with next phase
+; ... (aggregation code)
+
+; Example 3: Multi-phase pipeline
+G_LI  r10, 5000        ; Base sync ID
+G_LI  r11, 0           ; Iteration counter
+
+; loop_start:
+; ... work phase code ...
+
+; Barrier: compute dynamic sync_id
+SC_ADD r5, r10, r11    ; sync_id = 5000 + iteration
+TAG   r5               ; Core signals completion
+WAIT  r0, r5, r8       ; Wait for all (r8=num_cores)
+
+; Update iteration counter
+SC_ADDI r11, r11, 1    ; iteration++
+
+; Check termination
+G_LI  r12, 100
+BLT   r11, r12, -10    ; if (iteration < 100) jump back
+
+; Example 4: Subset synchronization
+; Group A (Cores 0-3): Use sync ID 100
+G_LI  r5, 100
+TAG   r5
+G_LI  r1, 0
+G_LI  r6, 4
+WAIT  r1, r5, r6       ; Only Group A synchronizes
+
+; Group B (Cores 4-7): Use sync ID 200
+G_LI  r5, 200
+TAG   r5
+G_LI  r1, 0
+G_LI  r6, 4
+WAIT  r1, r5, r6       ; Only Group B synchronizes
+```

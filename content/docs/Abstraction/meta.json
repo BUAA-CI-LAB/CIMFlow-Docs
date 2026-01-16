@@ -1,0 +1,15 @@
+{
+  "title": "Abstraction",
+  "description": "ISA and DSL",
+  "icon": "Building2",
+  "root": true,
+  "pages": [
+    "!index",
+    "---ISA---",
+    "ISA",
+    "Hardware-Abstractions",
+    "Instruction-Design",
+    "---DSL---",
+    "DSL"
+  ]
+}

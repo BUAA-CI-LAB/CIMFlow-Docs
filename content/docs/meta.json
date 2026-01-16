@@ -1,9 +1,12 @@
 {
-  "title": "Framework",
-  "description": "The CIMFlow framework",
-  "icon": "Building2",
-  "root": true,
-  "pages": [
-    "index"
-  ]
+    "title": "Documentation",
+    "root": true,
+    "pages": [
+        "index",
+        "Framework",
+        "Abstraction",
+        "Compiler",
+        "Simulator",
+        "Examples"
+    ]
 }

@@ -1,0 +1,122 @@
+---
+title: CIMFlow Framework
+description: An integrated framework for digital CIM accelerator design and simulation
+icon: Boxes
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { CircleHelp, Sparkles, Download, Zap, Terminal, Settings, Workflow, Play, Cpu, GraduationCap, Wrench } from 'lucide-react';
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow/releases" className="inline-block">
+    <img
+      src="https://img.shields.io/github/v/release/BUAA-CI-LAB/CIMFlow?include_prereleases&style=flat-square&label=version"
+      alt="GitHub Release"
+      className="h-5"
+    />
+  </a>
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow" className="inline-block">
+    <img
+      src="https://img.shields.io/github/stars/BUAA-CI-LAB/CIMFlow?style=flat-square&color=yellow"
+      alt="GitHub Stars"
+      className="h-5"
+    />
+  </a>
+</div>
+
+CIMFlow provides an end-to-end solution for designing and evaluating SRAM-based Compute-in-Memory accelerators. The framework integrates an MLIR-based compiler with a cycle-accurate SystemC simulator, enabling researchers and engineers to explore CIM architectures from neural network models to detailed performance analysis.
+
+---
+
+## Documentation
+
+<Cards>
+  <Card icon={<CircleHelp className="text-blue-400" />} href="/docs/Framework/what-is-cimflow" title="What is CIMFlow?">
+    Architecture overview and design philosophy
+  </Card>
+  <Card icon={<Sparkles className="text-purple-400" />} href="/docs/Framework/features" title="Features">
+    Compiler and simulator capabilities
+  </Card>
+  <Card icon={<Download className="text-green-400" />} href="/docs/Framework/installation" title="Installation">
+    Setup guide for Linux systems
+  </Card>
+  <Card icon={<Zap className="text-amber-400" />} href="/docs/Framework/quickstart" title="Quickstart">
+    End-to-end pipeline tutorial
+  </Card>
+  <Card icon={<Terminal className="text-cyan-400" />} href="/docs/Framework/cli" title="CLI Reference">
+    Complete command-line interface documentation
+  </Card>
+  <Card icon={<Settings className="text-rose-400" />} href="/docs/Framework/configuration" title="Configuration">
+    Configuration files and parameters
+  </Card>
+</Cards>
+
+---
+
+## Framework Components
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Workflow className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Compiler</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">MLIR-based toolchain with two-level optimization: CG-level workload partitioning and OP-level code generation</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Play className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Simulator</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Cycle-accurate SystemC simulator with energy tracking, memory hierarchy, and detailed profiling</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Terminal className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">CLI</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Unified command-line interface for compilation, simulation, and batch processing workflows</div>
+  </div>
+</div>
+
+---
+
+## Who Is This For?
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <GraduationCap className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Researchers</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Explore CIM architecture design spaces and analyze performance-energy tradeoffs</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Wrench className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Hardware Engineers</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Validate accelerator designs with cycle-accurate simulation before implementation</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">ML Engineers</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Evaluate neural network deployments on CIM hardware with realistic performance estimates</div>
+  </div>
+</div>
+
+To get started, see [Installation](/docs/Framework/installation) and [Quickstart](/docs/Framework/quickstart).
+
+---
+
+## Prerequisites
+
+Familiarity with the following is helpful:
+
+- **CIM fundamentals**: See [Literatures on SRAM-based CIM](https://github.com/BUAA-CI-LAB/Literatures-on-SRAM-based-CIM) for background
+- **ONNX format**: CIMFlow accepts neural network models in ONNX format
+- **Command-line usage**: Terminal navigation and shell commands
+
+No prior experience with MLIR or SystemC is required.

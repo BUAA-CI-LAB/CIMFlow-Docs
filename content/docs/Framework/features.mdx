@@ -1,0 +1,271 @@
+---
+title: Features
+description: Comprehensive feature overview for CIMFlow compiler and simulator
+icon: Sparkles
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Workflow, Play, Terminal, Settings, Zap, ChartColumn } from 'lucide-react';
+
+CIMFlow provides a complete toolchain for CIM accelerator evaluation, spanning neural network compilation to detailed performance analysis.
+
+---
+
+## Key Capabilities
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Workflow className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">MLIR-Based Compilation</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Robust IR with optimization passes built on LLVM/MLIR infrastructure</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Play className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Cycle-Accurate Simulation</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Precise timing model for all hardware components using SystemC</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Zap className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Energy Estimation</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Energy consumption tracking for CIM arrays, memory, and data movement</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Settings className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Configurable Architecture</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Parameterizable CIM macro size, memory hierarchy, and core count</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <ChartColumn className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Profiling & Analysis</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Detailed breakdowns of execution time and resource utilization</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Terminal className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Unified CLI</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Single command interface for compilation, simulation, and batch runs</div>
+  </div>
+</div>
+
+---
+
+## Compiler Features
+
+The CIMFlow compiler transforms ONNX models into optimized instruction sequences through a two-level pipeline.
+
+### Supported Operations
+
+Supported CNN operations:
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Compute</div>
+    <div className="text-sm text-fd-muted-foreground">Conv2D (standard and depthwise), Linear/Gemm (fully-connected layers)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Pooling</div>
+    <div className="text-sm text-fd-muted-foreground">MaxPool, AvgPool (OP-level templates available)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Element-wise</div>
+    <div className="text-sm text-fd-muted-foreground">Add (residual connections), Mul (with quantization support)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-2">Activation</div>
+    <div className="text-sm text-fd-muted-foreground">ReLU (OP-level template)</div>
+  </div>
+</div>
+
+<Callout type="info">
+Operations such as BatchNorm are fused during ONNX preprocessing. For the complete operator library, see [DSL Reference](/docs/Abstraction/DSL).
+</Callout>
+
+### CG-Level Optimization
+
+The Computational Graph level handles workload partitioning:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Dependency analysis
+Identifies data dependencies between operators for correct execution ordering.
+
+#### Core mapping
+Distributes operators across available cores for parallelism.
+
+#### Communication planning
+Schedules inter-core data transfers via NoC.
+
+#### Strategy selection
+Chooses optimal partitioning based on hardware constraints.
+
+</div>
+
+### OP-Level Code Generation
+
+The Operator level generates executable instructions:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Memory allocation
+Assigns buffers to local memory, global memory, and CIM arrays.
+
+#### Instruction scheduling
+Orders operations to maximize throughput.
+
+#### Address calculation
+Computes memory addresses for all data accesses.
+
+#### ISA emission
+Produces the final 32-bit instruction stream.
+
+</div>
+
+---
+
+## Simulator Features
+
+The SystemC-based simulator executes compiled programs with cycle-accurate timing.
+
+### Timing Model
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Cycle-accurate execution</div>
+    <div className="text-sm text-fd-muted-foreground">Precise timing for all instruction types</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Memory latency modeling</div>
+    <div className="text-sm text-fd-muted-foreground">Configurable access times for different memory levels</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">NoC simulation</div>
+    <div className="text-sm text-fd-muted-foreground">Bandwidth constraints and routing delays for inter-core communication</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Pipeline modeling</div>
+    <div className="text-sm text-fd-muted-foreground">Instruction fetch, decode, and execute stages</div>
+  </div>
+</div>
+
+### Energy Estimation
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">CIM Array Energy</div>
+    <div className="text-sm text-fd-muted-foreground">Per-operation energy based on macro configuration</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Memory Access Energy</div>
+    <div className="text-sm text-fd-muted-foreground">Read/write costs for local and global memory</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Data Movement Energy</div>
+    <div className="text-sm text-fd-muted-foreground">NoC transfer costs based on distance and bandwidth</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Static Energy</div>
+    <div className="text-sm text-fd-muted-foreground">Leakage consumption over execution time</div>
+  </div>
+</div>
+
+### Profiling Support
+
+Enable profiling with the `--profile` flag:
+
+```bash
+cimflow run pipeline -m model.onnx -o output --profile=from-config
+```
+
+Profiling output includes:
+
+- Per-layer execution time breakdown
+- Memory bandwidth utilization
+- Core activity and idle time statistics
+- Energy consumption by component
+
+---
+
+## CLI Features
+
+The `cimflow` CLI provides unified access to all framework functionality.
+
+<Tabs items={['Full Pipeline', 'Batch Processing', 'Compile Only', 'Simulate Only']}>
+  <Tab value="Full Pipeline">
+```bash
+cimflow run pipeline -m model.onnx -o output -t 8 -b 16
+```
+  </Tab>
+  <Tab value="Batch Processing">
+```bash
+cimflow run from-file config/batch.json
+```
+  </Tab>
+  <Tab value="Compile Only">
+```bash
+cimflow compile cg -m model.onnx -o output -t 8 -k 16
+```
+  </Tab>
+  <Tab value="Simulate Only">
+```bash
+cimflow sim -i instructions.bin -o output -t 8 -b 16
+```
+  </Tab>
+</Tabs>
+
+For complete CLI documentation, see [CLI Reference](/docs/Framework/cli).
+
+---
+
+## Audience Perspectives
+
+<Tabs items={['Researchers', 'Hardware Engineers', 'ML Engineers']}>
+  <Tab value="Researchers">
+**Design Space Exploration**
+
+CIMFlow enables systematic evaluation of CIM architecture variants. The configurable hardware model supports experiments with:
+
+- Macro group configuration (T, K parameters)
+- Memory hierarchy sizes and bandwidth
+- Core count and NoC topology
+- Quantization bit-widths
+
+Profiling capabilities provide data for performance modeling and optimization studies, enabling validation of analytical models against cycle-accurate simulation results.
+  </Tab>
+  <Tab value="Hardware Engineers">
+**Pre-Silicon Validation**
+
+CIMFlow provides early performance estimates before hardware implementation. The cycle-accurate simulator models:
+
+- Instruction execution timing
+- Memory subsystem behavior
+- Inter-core communication overhead
+- Energy consumption by component
+
+This enables identification of bottlenecks and validation of architectural decisions against target workloads before RTL implementation.
+  </Tab>
+  <Tab value="ML Engineers">
+**Deployment Evaluation**
+
+CIMFlow helps evaluate neural network deployments on CIM hardware. The framework supports:
+
+- ONNX model import from standard training frameworks
+- Performance comparison across model architectures
+- Quantization impact analysis
+- Batch size and throughput optimization
+
+This enables assessment of whether models meet latency and energy requirements on target CIM accelerators.
+  </Tab>
+</Tabs>

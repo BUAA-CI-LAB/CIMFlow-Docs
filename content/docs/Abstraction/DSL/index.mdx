@@ -1,0 +1,148 @@
+---
+title: Domain Specific Language
+description: CIM-DSL for programming Computing-in-Memory architectures
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+CIM-DSL is a domain-specific language designed for Computing-in-Memory architectures. It combines Python-like syntax with explicit memory management and hardware-aware operations.
+
+<Cards>
+  <Card title="Syntax" href="/docs/Abstraction/DSL/Syntax">
+    Control flow, slicing, operators
+  </Card>
+  <Card title="Built-in Functions" href="/docs/Abstraction/DSL/Built-in-Functions">
+    Memory, SIMD, CIM operations
+  </Card>
+  <Card title="Examples" href="/docs/Abstraction/DSL/Examples">
+    Kernel implementations
+  </Card>
+</Cards>
+
+---
+
+## Quick Start
+
+```c
+def main() {
+    input = Buffer(<32, 32>, int8, __INPUT_MEMORY__);
+    output = Buffer(<32>, int32, __OUTPUT_MEMORY__);
+
+    Trans(global_input, input);
+    SIMD(VVADD, input[0, :], input[1, :], output);
+}
+```
+
+---
+
+## Functions
+
+Functions are defined with typed parameters specifying shape, datatype, and memory location:
+
+<Tabs items={['Entry Point', 'With Parameters']}>
+  <Tab value="Entry Point">
+```c
+def main(null<int8>) {
+    // Program entry point
+}
+```
+  </Tab>
+  <Tab value="With Parameters">
+```c
+def process(input< <4, 8>, int8, __LOCAL__>) {
+    // Function body
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Tile Declaration
+
+Allocate memory blocks with the `Buffer` function:
+
+```c
+input = Buffer(<3, 32, 32>, int8, __INPUT_MEMORY__);
+weight = Buffer(<64, 128>, int8, __LOCAL__);
+```
+
+<Callout type="info">
+Tile shapes must be compile-time constants. Use `<-1>` for dynamic dimensions.
+</Callout>
+
+---
+
+## Data Types
+
+<div className="not-prose grid gap-2 sm:grid-cols-4 lg:grid-cols-7 my-6">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">int1</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Binary</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">int8</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">8-bit</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">int32</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">32-bit</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">int64</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">64-bit</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">index</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Index</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">fp16</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Half float</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <code className="font-semibold text-fd-primary">float32</code>
+    <div className="text-xs text-fd-muted-foreground mt-1">Float</div>
+  </div>
+</div>
+
+---
+
+## Memory Types
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__GLOBAL__</code>
+    <span className="text-sm text-fd-muted-foreground">Off-chip shared memory</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__LOCAL__</code>
+    <span className="text-sm text-fd-muted-foreground">On-chip SRAM per core</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__INPUT_MEMORY__</code>
+    <span className="text-sm text-fd-muted-foreground">Input buffer region</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__OUTPUT_MEMORY__</code>
+    <span className="text-sm text-fd-muted-foreground">Output buffer region</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__MACRO__</code>
+    <span className="text-sm text-fd-muted-foreground">CIM macro array</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__CIM_INPUT_REG_BUFFER__</code>
+    <span className="text-sm text-fd-muted-foreground">CIM input registers</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__CIM_OUTPUT_REG_BUFFER__</code>
+    <span className="text-sm text-fd-muted-foreground">CIM output registers</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">__ANY__</code>
+    <span className="text-sm text-fd-muted-foreground">Wildcard for parameters</span>
+  </div>
+</div>

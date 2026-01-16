@@ -1,0 +1,284 @@
+---
+title: Built-in Functions
+description: Memory, SIMD, and CIM operations in CIM-DSL
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { TypeTable } from 'fumadocs-ui/components/type-table';
+
+---
+
+## Memory Operations
+
+### Buffer
+
+Allocate a memory tile with specified shape, type, and location:
+
+```c
+buf = Buffer(<4, 8>, int8, __LOCAL__);
+```
+
+<TypeTable
+  type={{
+    shape: {
+      description: 'Tile dimensions',
+      type: '<dim1, dim2, ...>',
+    },
+    dtype: {
+      description: 'Element data type',
+      type: 'int1 | int8 | int32 | ...',
+      typeDescription: 'int1 | int8 | int32 | int64 | fp16 | float32',
+    },
+    location: {
+      description: 'Memory region for allocation. See Memory Types reference.',
+      type: 'MemoryType',
+      typeDescription: '__LOCAL__ | __GLOBAL__ | __INPUT_MEMORY__ | __OUTPUT_MEMORY__ | __MACRO__ | __CIM_INPUT_REG_BUFFER__ | __CIM_OUTPUT_REG_BUFFER__',
+      typeDescriptionLink: '/docs/Abstraction/DSL#memory-types',
+    },
+  }}
+/>
+
+### Trans
+
+Transfer data between memory regions:
+
+```c
+Trans(src_buffer, dst_buffer);
+```
+
+### Load / Save
+
+Access individual elements by index:
+
+```c
+val = Load(buf, [row, col]);
+Save(buf, [row, col], value);
+```
+
+### Shape
+
+Query dimension size at runtime:
+
+```c
+n = Shape(vector, 0);  // Get size of dimension 0
+```
+
+### Slice
+
+Create a subview of a buffer with explicit offsets, sizes, and steps:
+
+```c
+slice = Slice(buf, [offset0, offset1], [size0, size1], [step0, step1]);
+```
+
+<TypeTable
+  type={{
+    buffer: {
+      description: 'Source buffer to slice',
+      type: 'Buffer',
+    },
+    offsets: {
+      description: 'Starting indices for each dimension',
+      type: '[int, ...]',
+    },
+    sizes: {
+      description: 'Number of elements to include in each dimension',
+      type: '[int, ...]',
+    },
+    steps: {
+      description: 'Step size for each dimension',
+      type: '[int, ...]',
+    },
+  }}
+/>
+
+<Callout type="info">
+This is an alternative to NumPy-style slicing syntax. Both `buf[0:2, 1:3]` and `Slice(buf, [0, 1], [2, 2], [1, 1])` produce equivalent results.
+</Callout>
+
+---
+
+## CIM Operations
+
+### CIMSet
+
+Configure active CIM macros using a bitmask:
+
+```c
+mask = Buffer(<N_VCOL>, int1, __INPUT_MEMORY__);
+CIMSet(mask);
+```
+
+### CIMComputeDense
+
+Execute dense matrix-vector multiplication on CIM hardware:
+
+```c
+CIMComputeDense(input_buffer, weight_macros);
+```
+
+### CIMOutput
+
+Read results from CIM output registers:
+
+```c
+CIMOutput(length, offset, output_buffer);
+```
+
+<TypeTable
+  type={{
+    length: {
+      description: 'Number of elements to read',
+      type: 'int',
+    },
+    offset: {
+      description: 'Starting position in output registers',
+      type: 'int',
+      default: '0',
+    },
+    output: {
+      description: 'Destination buffer',
+      type: 'Buffer',
+    },
+  }}
+/>
+
+---
+
+## SIMD Operations
+
+Vector operations via the `SIMD` function:
+
+```c
+SIMD(op_code, src1, src2, dst);
+```
+
+<Tabs items={['Arithmetic', 'Activation', 'Reduction', 'Quantization']}>
+  <Tab value="Arithmetic">
+<div className="not-prose grid gap-2 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VVADD</code>
+    <span className="text-sm text-fd-muted-foreground">Vector-vector add</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VSADD</code>
+    <span className="text-sm text-fd-muted-foreground">Vector-scalar add</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VVMUL</code>
+    <span className="text-sm text-fd-muted-foreground">Vector-vector multiply</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VSMUL</code>
+    <span className="text-sm text-fd-muted-foreground">Vector-scalar multiply</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VS_SUB</code>
+    <span className="text-sm text-fd-muted-foreground">Vector-scalar subtract</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VS_DIV</code>
+    <span className="text-sm text-fd-muted-foreground">Vector-scalar divide</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VVMAX</code>
+    <span className="text-sm text-fd-muted-foreground">Element-wise maximum</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VFLOOR</code>
+    <span className="text-sm text-fd-muted-foreground">Element-wise floor</span>
+  </div>
+</div>
+  </Tab>
+  <Tab value="Activation">
+<div className="not-prose grid gap-2 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">SOFTMAX</code>
+    <span className="text-sm text-fd-muted-foreground">Softmax activation</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">GELU</code>
+    <span className="text-sm text-fd-muted-foreground">GELU activation</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">V_EXP</code>
+    <span className="text-sm text-fd-muted-foreground">Element-wise exponential</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VSQRT</code>
+    <span className="text-sm text-fd-muted-foreground">Element-wise square root</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">VSET</code>
+    <span className="text-sm text-fd-muted-foreground">Set all elements to value</span>
+  </div>
+</div>
+  </Tab>
+  <Tab value="Reduction">
+<div className="not-prose grid gap-2 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">REDUCE_SUM</code>
+    <span className="text-sm text-fd-muted-foreground">Sum all elements</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">REDUCE_MAX</code>
+    <span className="text-sm text-fd-muted-foreground">Find maximum element</span>
+  </div>
+</div>
+
+Use with the `Reduce` function:
+
+```c
+Reduce(REDUCE_SUM, src_vector, dst_vector);
+```
+  </Tab>
+  <Tab value="Quantization">
+<div className="not-prose grid gap-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">QUANTIZE</code>
+    <span className="text-sm text-fd-muted-foreground">Quantize to lower precision</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">RESADD_QUANTIZE</code>
+    <span className="text-sm text-fd-muted-foreground">Residual add + quantize</span>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card flex items-center justify-between">
+    <code className="font-semibold text-fd-primary">RESMUL_QUANTIZE</code>
+    <span className="text-sm text-fd-muted-foreground">Residual multiply + quantize</span>
+  </div>
+</div>
+  </Tab>
+</Tabs>
+
+---
+
+## Utility Functions
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card">
+    <code className="font-semibold text-fd-primary">Min(a, b)</code>
+    <div className="text-sm text-fd-muted-foreground mt-2">Returns the minimum of two values</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card">
+    <code className="font-semibold text-fd-primary">Max(a, b)</code>
+    <div className="text-sm text-fd-muted-foreground mt-2">Returns the maximum of two values</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card">
+    <code className="font-semibold text-fd-primary">Print(val)</code>
+    <div className="text-sm text-fd-muted-foreground mt-2">Debug output to console</div>
+  </div>
+</div>
+
+### SpecialRegSet
+
+Configure [special registers](/docs/Abstraction/Instruction-Design/Register-Files#special-register-file-srf) for CIM and SIMD operations:
+
+```c
+SpecialRegSet(SPECIAL_REG_INPUT_BIT_WIDTH, 8);
+SpecialRegSet(SPECIAL_REG_SIMD_OUTPUT_BIT_WIDTH, 32);
+```
+
+<Callout type="info">
+Configure bit widths before performing CIM or SIMD operations to ensure correct data handling.
+</Callout>

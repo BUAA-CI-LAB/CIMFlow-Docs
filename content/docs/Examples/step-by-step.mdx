@@ -1,0 +1,491 @@
+---
+title: Step-by-Step Compilation
+description: Run each compilation stage individually with IR inspection
+icon: Layers
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Clock, ArrowRight } from 'lucide-react';
+
+<div className="not-prose flex items-center gap-2 mb-6 text-sm text-fd-muted-foreground">
+  <Clock className="size-4" />
+  <span>Estimated time: ~5 minutes</span>
+</div>
+
+This tutorial breaks down the CIMFlow pipeline into individual stages, allowing you to inspect intermediate representations at each step.
+
+<Callout type="warn">
+**Prerequisite**: Complete the [Quick Start](/docs/Examples/quick-start) tutorial first to understand the end-to-end pipeline.
+</Callout>
+
+---
+
+## Pipeline Overview
+
+The compilation flow consists of three main stages, each producing inspectable intermediate outputs:
+
+<div className="not-prose flex flex-wrap items-center justify-center gap-2 my-6 text-sm">
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">ONNX</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">CG Compile</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">CG IR</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">OP Compile</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">ISA</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Simulate</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">Report</div>
+</div>
+
+---
+
+## Setup
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Create output directories
+
+```bash
+mkdir -p output/stages/{cg,op,sim}
+```
+
+#### Set the model path
+
+```bash
+MODEL="data/models/resnet18.onnx"
+```
+
+</div>
+
+---
+
+## Stage 1: CG-Level Compilation
+
+CG (Compute Graph) compilation transforms the ONNX model into high-level CIM operations.
+
+### What CG Compilation Does
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Parse ONNX Model</div>
+    <div className="text-xs text-fd-muted-foreground">Load and validate neural network graph</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Analyze Dependencies</div>
+    <div className="text-xs text-fd-muted-foreground">Build layer dependency graph</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Partition Computation</div>
+    <div className="text-xs text-fd-muted-foreground">Partition into stages across cores</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Generate Schedule</div>
+    <div className="text-xs text-fd-muted-foreground">Create high-level operation ordering</div>
+  </div>
+</div>
+
+### Run CG Compilation
+
+```bash title="CG compilation command"
+cimflow compile cg \
+    -m $MODEL \
+    -o output/stages/cg \
+    -l VERBOSE
+```
+
+<Callout type="info">
+The progress bar shows dynamic programming solving the optimal graph-to-stage mapping. Each "prefix" represents a subgraph being optimized.
+</Callout>
+
+### Inspect CG Output
+
+List the output files:
+
+```bash
+ls output/stages/cg/
+```
+
+View the CG instructions:
+
+```bash
+head -30 output/stages/cg/instructions_*.json
+```
+
+<Tabs items={['Sample Output', 'Explanation']}>
+<Tab value="Sample Output">
+```json
+{
+    "metadata": {
+        "op_count": 1110836224
+    },
+    "core_0_0": {
+        "stages": {
+            "0": {
+                "cluster_id": "/conv1.0/Conv",
+                "weight_replica_id": 0,
+                "instructions": [
+                    {
+                        "op": "read",
+                        "attr": {
+                            "tensor_type": "weight",
+                            "shape": [64, 3, 3, 3],
+                            "inst_group_id": "core_0.stage_0.read_weight.inst_0"
+                        }
+                    },
+                    {
+                        "op": "read",
+                        "attr": {
+                            "tensor_type": "feature",
+                            "shape": [1, 3, 32, 32],
+                            "inst_group_id": "core_0.stage_0.read_feature.inst_1"
+                        }
+                    },
+                    {
+                        "op": "add",
+                        "attr": {
+                            "shape": [1, 64, 32, 32],
+                            "inst_group_id": "core_0.stage_0.add.inst_2"
+                        }
+                    },
+                    {
+                        "op": "conv",
+                        "attr": {
+                            "X_shape": [1, 3, 32, 32],
+                            "W_shape": [64, 3, 3, 3],
+                            "padding": [1, 1, 1, 1],
+                            "strides": [1, 1],
+                            "inst_group_id": "core_0.stage_0.conv.inst_3"
+                        }
+                    },
+                    {
+                        "op": "write",
+                        "attr": {
+                            "tensor_type": "feature",
+                            "shape": [1, 64, 32, 32],
+                            "inst_group_id": "core_0.stage_0.write_feature.inst_4",
+                            "write_id": "node_0_batch_0"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+</Tab>
+<Tab value="Explanation">
+The CG instructions are organized by core and stage:
+- **read**: Load weights or feature data from memory
+- **add**: Vector addition for accumulation
+- **conv**: Execute convolution operation with specified shapes and padding
+- **write**: Write feature data back to memory
+- **send**: Transfer data to another core via NoC
+- **receive**: Receive data from another core via NoC
+
+Each instruction includes an `inst_group_id` for tracing and debugging.
+</Tab>
+</Tabs>
+
+Count operations:
+
+```bash
+grep -c '"op":' output/stages/cg/instructions_*.json
+```
+
+---
+
+## Stage 2: OP-Level Compilation
+
+OP (Operator) compilation transforms CG instructions into ISA instructions for each core.
+
+### What OP Compilation Does
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Process CG Instructions</div>
+    <div className="text-xs text-fd-muted-foreground">Parse high-level operation schedule</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Generate ISA per Core</div>
+    <div className="text-xs text-fd-muted-foreground">Create instruction sequences for each core</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Memory Allocation</div>
+    <div className="text-xs text-fd-muted-foreground">SRAM tiling and weight placement</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Instruction Scheduling</div>
+    <div className="text-xs text-fd-muted-foreground">Optimize execution order and synchronization</div>
+  </div>
+</div>
+
+### Run OP Compilation
+
+```bash title="OP compilation command"
+CG_FILE=$(ls output/stages/cg/instructions_*.json | head -1)
+
+cimflow compile op \
+    -i $CG_FILE \
+    -o output/stages/op \
+    -t 8 -b 16 \
+    -l VERBOSE
+```
+
+<Callout type="info">
+Each core receives its own instruction sequence. The compiler handles SRAM tiling, weight loading, and synchronization between cores.
+</Callout>
+
+### Inspect ISA Output
+
+List the output:
+
+```bash
+ls output/stages/op/
+```
+
+View ISA instructions (JSON format):
+
+```bash
+head -40 output/stages/op/isa_instructions_*.json
+```
+
+<Tabs items={['Sample Output', 'Explanation']}>
+<Tab value="Sample Output">
+```json
+{"metadata":{"op_count":1110836224},
+"0":[
+{"opcode":45,"rd":16,"imm":8},
+{"opcode":45,"rd":17,"imm":8},
+{"opcode":45,"rd":20,"imm":8},
+{"opcode":44,"rd":0,"imm":1060352},
+{"opcode":44,"rd":1,"imm":0},
+{"opcode":44,"rd":2,"imm":1728},
+{"opcode":48,"rs":0,"rt":2,"rd":1,"imm":0},
+{"opcode":44,"rd":0,"imm":1060352},
+{"opcode":44,"rd":1,"imm":524288},
+{"opcode":44,"rd":2,"imm":3072},
+{"opcode":48,"rs":0,"rt":2,"rd":1,"imm":0},
+{"opcode":20,"rs":1,"rt":2,"rd":4,"re":3,"funct":0}
+]}
+```
+</Tab>
+<Tab value="Explanation">
+The ISA instructions use numeric opcodes:
+- **opcode 44/45**: Load immediate values (G_LI, S_LI)
+- **opcode 48/50**: Memory copy operations (MEM_CPY)
+- **opcode 20**: Vector operations (VEC_ADD)
+- **opcode 32/36**: Scalar arithmetic
+
+Instructions are grouped by core ID (e.g., `"0"` for core 0).
+</Tab>
+</Tabs>
+
+Count total instructions:
+
+```bash
+grep -c '"opcode":' output/stages/op/isa_instructions_*.json
+```
+
+---
+
+## Converting JSON to Assembly
+
+The JSON format is machine-readable but verbose. Convert to assembly for easier inspection:
+
+```bash title="Convert JSON to assembly format"
+ISA_FILE=$(ls output/stages/op/isa_instructions_*.json | head -1)
+
+cim-compiler convert \
+    --src-type json \
+    --dst-type asm \
+    --src-file $ISA_FILE \
+    --dst-file output/stages/op/isa_instructions.asm
+```
+
+<Callout type="idea" title="When to use each format">
+- **JSON**: Programmatic analysis, parsing with scripts
+- **Assembly**: Manual debugging, understanding instruction flow
+</Callout>
+
+### View Assembly Output
+
+```bash
+head -30 output/stages/op/isa_instructions.asm
+```
+
+<Tabs items={['Sample Output', 'Explanation']}>
+<Tab value="Sample Output">
+```asm
+# Core 0
+S_LI VEC_IBW1, 8
+S_LI VEC_IBW2, 8
+S_LI VEC_OBW, 8
+G_LI r0, 1060352
+G_LI r1, 0
+G_LI r2, 1728
+MEM_CPY r1, r0, r2, 0
+G_LI r0, 1060352
+G_LI r1, 524288
+G_LI r2, 3072
+MEM_CPY r1, r0, r2, 0
+S_LI CIM_IBW, 8
+S_LI CIM_WBW, 8
+S_LI CIM_OBW, 32
+S_LI CIM_GSZ, 8
+S_LI CIM_AG, 16
+VEC_ADD_1 r4, r1, r2, r3
+```
+</Tab>
+<Tab value="Explanation">
+The assembly format shows readable mnemonics:
+- **S_LI/G_LI**: Load immediate to special/general register
+- **MEM_CPY**: Memory copy between addresses
+- **VEC_ADD_1**: Vector addition operation
+- **CIM_***: CIM configuration registers (bit widths, group sizes)
+
+Register names like `VEC_IBW1` indicate vector input bit width.
+</Tab>
+</Tabs>
+
+---
+
+## Stage 3: Simulation
+
+Cycle-accurate simulation executes ISA instructions on the modeled CIM hardware.
+
+### What Simulation Does
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Cycle-by-Cycle Execution</div>
+    <div className="text-xs text-fd-muted-foreground">Precise timing for all instructions</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">CIM Array Modeling</div>
+    <div className="text-xs text-fd-muted-foreground">Compute-in-memory operation timing</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">NoC Simulation</div>
+    <div className="text-xs text-fd-muted-foreground">Inter-core communication delays</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="text-sm font-medium text-fd-primary">Energy Tracking</div>
+    <div className="text-xs text-fd-muted-foreground">Power and energy estimation</div>
+  </div>
+</div>
+
+### Run Simulation
+
+```bash title="Simulation command"
+ISA_FILE=$(ls output/stages/op/isa_instructions_*.json | head -1)
+
+cimflow sim \
+    -i $ISA_FILE \
+    -o output/stages/sim \
+    -t 8 -b 16 \
+    -l VERBOSE
+```
+
+<Callout type="info">
+The simulator models all 64 cores in parallel, tracking data movement through the NoC and CIM array operations. Power is estimated from a calibrated energy model.
+</Callout>
+
+### View Simulation Results
+
+```bash
+cat output/stages/sim/simulation_*.txt
+```
+
+Sample output:
+
+```text
+Simulation Result:
+  - latency:            2.08837 ms
+  - average power:      4420.4895 mW
+  - total energy:       9231608896.0073 pJ/it
+  - TOPS:               0.5319
+  - TOPS/W:             0.1203
+```
+
+---
+
+## Output Summary
+
+After completing all stages, your output directory contains:
+
+<Files>
+  <Folder name="output/stages" defaultOpen>
+    <Folder name="cg" defaultOpen>
+      <File name="instructions_*.json" />
+    </Folder>
+    <Folder name="op" defaultOpen>
+      <File name="isa_instructions_*.json" />
+      <File name="isa_instructions.asm" />
+    </Folder>
+    <Folder name="sim" defaultOpen>
+      <File name="simulation_*.txt" />
+    </Folder>
+  </Folder>
+</Files>
+
+---
+
+## Key Files
+
+| File | Description |
+|------|-------------|
+| `cg/instructions_*.json` | CG-level operations (READ, COMPUTE, WRITE) |
+| `op/isa_instructions_*.json` | ISA instructions per core (JSON) |
+| `op/isa_instructions.asm` | ISA instructions (human-readable assembly) |
+| `sim/simulation_*.txt` | Performance report |
+
+<Callout type="info">
+The `*` in filenames represents a timestamp suffix (e.g., `instructions_20240115_143052.json`). This allows multiple runs without overwriting previous results.
+</Callout>
+
+---
+
+## Comparing Formats
+
+<Tabs items={['JSON', 'Assembly']}>
+<Tab value="JSON">
+```json
+{"opcode":44,"rd":0,"imm":1060352},
+{"opcode":44,"rd":1,"imm":0},
+{"opcode":44,"rd":2,"imm":1728},
+{"opcode":48,"rs":0,"rt":2,"rd":1,"imm":0},
+{"opcode":20,"rs":1,"rt":2,"rd":4,"re":3,"funct":0}
+```
+Advantages:
+- Machine-readable
+- Complete metadata with register encodings
+- Easy to parse programmatically
+</Tab>
+<Tab value="Assembly">
+```asm
+G_LI r0, 1060352
+G_LI r1, 0
+G_LI r2, 1728
+MEM_CPY r1, r0, r2, 0
+VEC_ADD_1 r4, r1, r2, r3
+```
+Advantages:
+- Human-readable mnemonics
+- Compact representation
+- Familiar format for debugging
+</Tab>
+</Tabs>
+
+---
+
+## What You Learned
+
+- **CG Compilation** — Transform ONNX to high-level CIM operations
+- **OP Compilation** — Generate per-core ISA instructions
+- **IR Inspection** — Inspect JSON and assembly outputs
+

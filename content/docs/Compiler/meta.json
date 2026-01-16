@@ -1,0 +1,7 @@
+{
+    "title": "Compiler",
+    "description": "MLIR-based toolchain",
+    "icon": "Workflow",
+    "root": true,
+    "pages": ["index"]
+}

@@ -1,0 +1,370 @@
+---
+title: Instruction Set
+description: Complete reference for CIM compute, communication, and control instructions
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+## Instruction Overview
+
+The instruction set is designed based on the RISC philosophy,
+with each fundamental instruction corresponding to one of three basic operations:
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>**compute**</span>,
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-500"></span>**communication**</span>, and
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-500"></span>**control flow**</span>.
+
+<style>{`
+  .table_c {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table_c th,
+  .table_c td {
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+  }
+  .table_c td {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem;
+  }
+  .table_c code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  .table_c th:last-child,
+  .table_c td:last-child {
+    width: 2%;
+  }
+`}</style>
+
+<style>{`
+  .table_l {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table_l th,
+  .table_l td {
+    text-align: left;
+    vertical-align: middle;
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+  }
+  .table_l code {
+    background: none;
+    padding: 0;
+    font-size: 0.85rem;
+  }
+  .cat-compute { border-left: 3px solid #3b82f6; }
+  .cat-comm { border-left: 3px solid #22c55e; }
+  .cat-control { border-left: 3px solid #f59e0b; }
+  .cat-r { border-left: 3px solid #8b5cf6; }
+  .cat-ia { border-left: 3px solid #06b6d4; }
+  .cat-ib { border-left: 3px solid #14b8a6; }
+  .cat-ic { border-left: 3px solid #10b981; }
+  .cat-j { border-left: 3px solid #f97316; }
+`}</style>
+
+<table className="table_l">
+  <thead>
+    <tr>
+      <th>Operation Type</th>
+      <th>Mnemonic</th>
+      <th>Description</th>
+      <th>Key Operands</th>
+    </tr>
+  </thead>
+  <tbody>
+    {/* Matrix–Vector Operation - Compute */}
+    <tr className="cat-compute">
+      <td>Matrix–Vector Operation</td>
+      <td><code>CIM_MVM</code></td>
+      <td>Matrix–vector multiply-accumulate on in-memory-computing array</td>
+      <td><code>input-address</code>, <code>input-length</code>, <code>optional-flags</code>, <code>weight</code>, <code>batch</code></td>
+    </tr>
+    {/* Vector Operation - Compute */}
+    <tr className="cat-compute">
+      <td rowSpan={2}>Vector Operation</td>
+      <td><code>VEC_OP</code></td>
+      <td>Single-instruction multiple-data operation</td>
+      <td><code>src1</code>, <code>src2</code>, <code>length</code>, <code>dst</code>, <code>functor</code></td>
+    </tr>
+    <tr className="cat-compute">
+      <td><code>REDUCE</code></td>
+      <td>Vector reduction/aggregation operation</td>
+      <td><code>src</code>, <code>length</code>, <code>dst</code>, <code>functor</code></td>
+    </tr>
+    {/* Scalar Operation - Compute */}
+    <tr className="cat-compute">
+      <td rowSpan={2}>Scalar Operation (Compute)</td>
+      <td><code>SC_RR</code></td>
+      <td rowSpan={2}>Scalar data operation</td>
+      <td><code>rs</code>, <code>rt</code>, <code>rd</code>, <code>functor</code></td>
+    </tr>
+    <tr className="cat-compute">
+      <td><code>SC_RI</code></td>
+      <td><code>rs</code>, <code>rd</code>, <code>functor</code></td>
+    </tr>
+    {/* Scalar Operation - Communication */}
+    <tr className="cat-comm">
+      <td rowSpan={6}>Scalar Operation (Comm)</td>
+      <td><code>SC_LD</code></td>
+      <td rowSpan={2}>Scalar data load/store</td>
+      <td><code>rs</code>, <code>rd</code>, <code>offset</code></td>
+    </tr>
+    <tr className="cat-comm">
+      <td><code>SC_ST</code></td>
+      <td><code>rs</code>, <code>rt</code>, <code>offset</code></td>
+    </tr>
+    <tr className="cat-comm">
+      <td><code>G_LI</code></td>
+      <td rowSpan={4}>Scalar assignment</td>
+      <td><code>rd</code>, <code>imm</code></td>
+    </tr>
+    <tr className="cat-comm">
+      <td><code>S_LI</code></td>
+      <td><code>rd</code>, <code>imm</code></td>
+    </tr>
+    <tr className="cat-comm">
+      <td><code>GS_MOV</code></td>
+      <td><code>rs</code>, <code>rd</code></td>
+    </tr>
+    <tr className="cat-comm">
+      <td><code>SG_MOV</code></td>
+      <td><code>rs</code>, <code>rd</code></td>
+    </tr>
+    {/* Data Movement - Communication */}
+    <tr className="cat-comm">
+      <td>Data Movement</td>
+      <td><code>MEM_CPY</code></td>
+      <td>Data copy among memory resources (local / global memory)</td>
+      <td><code>src</code>, <code>length</code>, <code>dst</code></td>
+    </tr>
+    {/* Inter-Core Communication - Communication */}
+    <tr className="cat-comm">
+      <td rowSpan={2}>Inter-Core Communication</td>
+      <td><code>SEND</code></td>
+      <td>Send data across cores</td>
+      <td><code>src</code>, <code>dst</code>, <code>core-id</code>, <code>length</code>, <code>tag</code></td>
+    </tr>
+    <tr className="cat-comm">
+      <td><code>RECV</code></td>
+      <td>Receive data across cores</td>
+      <td><code>src</code>, <code>dst</code>, <code>core-id</code>, <code>length</code>, <code>tag</code></td>
+    </tr>
+    {/* Intra-Core Control - Control Flow */}
+    <tr className="cat-control">
+      <td rowSpan={2}>Intra-Core Control</td>
+      <td><code>BRANCH</code></td>
+      <td>Conditional branch</td>
+      <td><code>rs</code>, <code>rt</code>, <code>offset</code>, <code>cond</code></td>
+    </tr>
+    <tr className="cat-control">
+      <td><code>JMP</code></td>
+      <td>Unconditional jump</td>
+      <td><code>offset</code></td>
+    </tr>
+    {/* Inter-Core Synchronization - Control Flow */}
+    <tr className="cat-control">
+      <td rowSpan={3}>Inter-Core Synchronization</td>
+      <td><code>WAIT</code></td>
+      <td>Wait for synchronization point from another core</td>
+      <td><code>src-id</code>, <code>sync-id</code>, <code>expected-writes</code></td>
+    </tr>
+    <tr className="cat-control">
+      <td><code>BARRIER</code></td>
+      <td>Collective barrier synchronization</td>
+      <td><code>core-count</code>, <code>barrier-id</code></td>
+    </tr>
+    <tr className="cat-control">
+      <td><code>TAG</code></td>
+      <td>Mark synchronization point for other cores</td>
+      <td><code>sync-id</code></td>
+    </tr>
+  </tbody>
+</table>
+
+
+## Instruction Encoding
+
+Instructions are grouped by their [encoding type](/docs/Abstraction/Instruction-Design#instruction-format):
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-500"></span>**R**</span>,
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-cyan-500"></span>**I-A**</span>,
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-teal-500"></span>**I-B**</span>,
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>**I-C**</span>, and
+<span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-orange-500"></span>**J**</span>.
+
+<table className="table_c">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Instruction</th>
+      <th>31:26</th>
+      <th>25:21</th>
+      <th>20:16</th>
+      <th>15:11</th>
+      <th>10:6</th>
+      <th>5:1</th>
+      <th>0</th>
+    </tr>
+  </thead>
+  <tbody>
+    {/* R-type instructions */}
+    <tr className="cat-r">
+      <td rowSpan={6}>R</td>
+      <td><code>CIM_MVM</code></td>
+      <td><code>000000</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>re</code></td>
+      <td><code>rf</code></td>
+      <td colSpan="2"><code>flags</code></td>
+    </tr>
+    <tr className="cat-r">
+      <td><code>VEC_OP</code></td>
+      <td><code>01XX00</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td><code>re</code></td>
+      <td colSpan="2"><code>funct</code></td>
+    </tr>
+    <tr className="cat-r">
+      <td><code>REDUCE</code></td>
+      <td><code>010001</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td><code>0 0000</code></td>
+      <td colSpan="2"><code>funct</code></td>
+    </tr>
+    <tr className="cat-r">
+      <td><code>SC_RR</code></td>
+      <td><code>100000</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td><code>0 0000</code></td>
+      <td colSpan="2"><code>funct</code></td>
+    </tr>
+    <tr className="cat-r">
+      <td><code>SEND</code></td>
+      <td><code>110100</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td><code>re</code></td>
+      <td><code>rf</code></td>
+      <td></td>
+    </tr>
+    <tr className="cat-r">
+      <td><code>RECV</code></td>
+      <td><code>110110</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td><code>re</code></td>
+      <td><code>rf</code></td>
+      <td></td>
+    </tr>
+    {/* I-A type (11-bit immediate) */}
+    <tr className="cat-ia">
+      <td rowSpan={3}>I-A</td>
+      <td><code>SC_RI</code></td>
+      <td><code>100100</code></td>
+      <td><code>rs</code></td>
+      <td><code>rd</code></td>
+      <td><code>funct</code></td>
+      <td colSpan="3"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ia">
+      <td><code>MEM_CPY</code></td>
+      <td><code>1100XY</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="3"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ia">
+      <td><code>WAIT</code></td>
+      <td><code>111101</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="3"><code>0 0000 0000 00</code></td>
+    </tr>
+    {/* I-B type (16-bit immediate) */}
+    <tr className="cat-ib">
+      <td rowSpan={6}>I-B</td>
+      <td><code>SC_LD</code></td>
+      <td><code>101000</code></td>
+      <td><code>rs</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="4"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ib">
+      <td><code>SC_ST</code></td>
+      <td><code>101001</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td colSpan="4"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ib">
+      <td><code>GS_MOV</code></td>
+      <td><code>101110</code></td>
+      <td><code>rs</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="4"><code>0000 0000 0000 0000</code></td>
+    </tr>
+    <tr className="cat-ib">
+      <td><code>SG_MOV</code></td>
+      <td><code>101111</code></td>
+      <td><code>rs</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="4"><code>0000 0000 0000 0000</code></td>
+    </tr>
+    <tr className="cat-ib">
+      <td><code>BRANCH</code></td>
+      <td><code>1110XX</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td colSpan="4"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ib">
+      <td><code>BARRIER</code></td>
+      <td><code>111110</code></td>
+      <td><code>rs</code></td>
+      <td><code>rt</code></td>
+      <td colSpan="4"><code>0000 0000 0000 0000</code></td>
+    </tr>
+    {/* I-C type (21-bit immediate) */}
+    <tr className="cat-ic">
+      <td rowSpan={3}>I-C</td>
+      <td><code>G_LI</code></td>
+      <td><code>101100</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="5"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ic">
+      <td><code>S_LI</code></td>
+      <td><code>101101</code></td>
+      <td><code>rd</code></td>
+      <td colSpan="5"><code>imm</code></td>
+    </tr>
+    <tr className="cat-ic">
+      <td><code>TAG</code></td>
+      <td><code>111111</code></td>
+      <td><code>rs</code></td>
+      <td colSpan="5"><code>0 0000 0000 0000 0000 0000</code></td>
+    </tr>
+    {/* J-type (26-bit immediate) */}
+    <tr className="cat-j">
+      <td>J</td>
+      <td><code>JMP</code></td>
+      <td><code>111100</code></td>
+      <td colSpan="6"><code>imm</code></td>
+    </tr>
+  </tbody>
+</table>

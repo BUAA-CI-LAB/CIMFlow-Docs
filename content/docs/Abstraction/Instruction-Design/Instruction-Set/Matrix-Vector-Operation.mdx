@@ -1,0 +1,202 @@
+---
+title: Matrix–Vector Operation
+description: Computing-in-memory matrix-vector multiplication instructions
+---
+
+Matrix–vector operations leverage the CIM array for efficient parallel multiplication between weight matrices and input vectors, enabling high-performance deep learning inference.
+
+---
+
+## CIM_MVM
+
+Performs matrix-vector multiplication (MVM) using the CIM array, computing the product of a weight matrix stored in CIM and an input feature vector from local memory. Supports batch operations via configurable flag bits.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">10:6</div>
+    <div className="w-[18.75%] text-center py-1.5">5:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">000000</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">input addr</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">input len</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">re</div>
+      <div className="text-xs text-fd-muted-foreground">weight addr</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rf</div>
+      <div className="text-xs text-fd-muted-foreground">batch count</div>
+    </div>
+    <div className="w-[18.75%] py-3 border-l border-fd-border bg-fd-accent/15">
+      <div className="font-mono font-medium">flags</div>
+      <div className="text-xs text-fd-muted-foreground">6-bit</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">CIM_MVM rs, rt, re, rf, [flags]</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>CIM[GRF[re]] × MEM[GRF[rs]:GRF[rt]]</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">Input Vector Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base address of the input feature vector in local memory</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Input Vector Length</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Number of elements in the input vector (must match matrix column dimension)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[re]</code>
+      <span className="text-xs text-fd-muted-foreground">Weight Matrix Address</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Base address of the weight matrix in the CIM array</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rf]</code>
+      <span className="text-xs text-fd-muted-foreground">Batch Count</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Number of consecutive MVM operations. When > 1, executes batch multiplication for multiple input vectors</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm col-span-2">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">flags</code>
+      <span className="text-xs text-fd-muted-foreground">Operation Flags (6 bits)</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Control bits for execution modes. Extensible for future features.</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+### Operation Flags
+
+The `flags` field controls execution modes for CIM matrix-vector multiplication. Multiple flags can be combined to optimize computation.
+
+<div className="not-prose grid gap-2 my-3">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">GRP</span>
+      <code className="text-sm text-fd-muted-foreground">Group Mode</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Partitions computation into groups for parallel execution. Each group handles a subset of the weight matrix</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">GRP_I</span>
+      <code className="text-sm text-fd-muted-foreground">Group Input Mode</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Controls input vector distribution across computation groups. Works with GRP flag to determine data flow patterns</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">BATCH</span>
+      <code className="text-sm text-fd-muted-foreground">Batch Processing</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Processes multiple input vectors consecutively. Works with GRF[rf] batch count parameter for improved throughput</div>
+  </div>
+</div>
+
+<Callout type="info">
+**Accumulation (ACC)** is always enabled by default - results are accumulated to the output buffer. This flag is implicit and not exposed in assembly syntax.
+</Callout>
+
+
+---
+
+## Examples
+
+```asm
+; Example 1: Basic matrix-vector multiplication
+; y = W × x, where W is 128×256, x is 256×1
+G_LI  r1, 0x1000        ; Input vector address
+G_LI  r2, 256           ; Input vector length
+G_LI  r3, 0x0           ; Weight matrix in CIM[0]
+G_LI  r4, 1             ; Single operation
+CIM_MVM r1, r2, r3, r4  ; Result stored in CIM output buffer
+
+; Example 2: Batch processing
+; Process 16 input vectors
+G_LI  r1, 0x2000        ; First input vector
+G_LI  r2, 512           ; Vector length
+G_LI  r3, 0x1000        ; Weight matrix in CIM[0x1000]
+G_LI  r4, 16            ; Batch size = 16
+CIM_MVM r1, r2, r3, r4, BATCH  ; Batch processing mode
+
+; Example 3: Grouped computation
+; Use grouped mode for parallel processing
+G_LI  r1, 0x3000        ; Input address
+G_LI  r2, 1024          ; Vector length
+G_LI  r3, 0x0           ; Weight matrix
+G_LI  r4, 1             ; Single operation
+CIM_MVM r1, r2, r3, r4, GRP  ; Grouped computation
+
+; Example 4: Multi-layer inference
+; Sequential MVM for 3 layers
+S_LI  INPUT_BITWIDTH, 8   ; Configure CIM: INT8 input
+S_LI  OUTPUT_BITWIDTH, 32 ; INT32 output
+
+; Layer 1: 784 → 512
+G_LI  r1, 0x1000
+G_LI  r2, 784
+G_LI  r3, 0x0
+G_LI  r4, 1
+CIM_MVM r1, r2, r3, r4
+
+; Apply activation (omitted for brevity)
+
+; Layer 2: 512 → 256
+G_LI  r1, 0x2000        ; Layer 1 output
+G_LI  r2, 512
+G_LI  r3, 0x10000       ; Layer 2 weights
+G_LI  r4, 1
+CIM_MVM r1, r2, r3, r4
+
+; Layer 3: 256 → 10
+G_LI  r1, 0x3000        ; Layer 2 output
+G_LI  r2, 256
+G_LI  r3, 0x20000       ; Layer 3 weights
+G_LI  r4, 1
+CIM_MVM r1, r2, r3, r4
+
+; Example 5: Batch inference for throughput
+; Process 32 images in a batch
+G_LI  r1, 0x10000       ; First image features
+G_LI  r2, 784           ; Feature dimension
+G_LI  r3, 0x0           ; Weight matrix
+G_LI  r4, 32            ; Batch count
+CIM_MVM r1, r2, r3, r4, BATCH  ; Batch processing
+```

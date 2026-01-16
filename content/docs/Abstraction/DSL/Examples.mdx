@@ -1,0 +1,177 @@
+---
+title: Examples
+description: Real-world CIM-DSL kernel implementations
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+---
+
+## Vector Addition
+
+SIMD operations with explicit bit-width configuration:
+
+```c
+def main(null<int8>) {
+    SpecialRegSet(SPECIAL_REG_SIMD_INPUT_1_BIT_WIDTH, 32);
+    SpecialRegSet(SPECIAL_REG_SIMD_INPUT_2_BIT_WIDTH, 32);
+    SpecialRegSet(SPECIAL_REG_SIMD_OUTPUT_BIT_WIDTH, 32);
+
+    buf1 = Buffer(<4>, index, __LOCAL__);
+    buf2 = Buffer(<4>, index, __LOCAL__);
+    buf3 = Buffer(<4>, index, __LOCAL__);
+
+    Save(buf1, [0], 1); Save(buf1, [1], 2);
+    Save(buf1, [2], 3); Save(buf1, [3], 4);
+    Save(buf2, [0], 10); Save(buf2, [1], 20);
+    Save(buf2, [2], 30); Save(buf2, [3], 40);
+
+    SIMD(VVADD, buf1, buf2, buf3);  // Result: 11, 22, 33, 44
+}
+```
+
+---
+
+## Fibonacci Sequence
+
+Loop-carried variables with the `carry` clause:
+
+```c
+def main(null<int8>) {
+    a = 1;
+    b = 1;
+    Print(a);
+    Print(b);
+
+    for i in range(6) carry (a, b) {
+        c = a + b;
+        a = b;
+        b = c;
+        Print(c);
+    };
+    // Output: 1, 1, 2, 3, 5, 8, 13, 21
+}
+```
+
+---
+
+## Conv2D Kernel
+
+A complete 2D convolution implementation for CIM hardware:
+
+<Steps>
+<Step>
+
+### Memory Allocation
+
+```c
+def main() {
+    // Global memory (off-chip)
+    global_input = Buffer(<INPUT_ROW, INPUT_COL, INPUT_CHANNEL>, int8, __GLOBAL__);
+    global_output = Buffer(<OUTPUT_ROW, OUTPUT_COL, OUTPUT_CHANNEL>, int32, __GLOBAL__);
+
+    // Local memory (on-chip)
+    local_input = Buffer(<INPUT_ROW, INPUT_COL, INPUT_CHANNEL>, int8, __INPUT_MEMORY__);
+    local_output = Buffer(<OUTPUT_ROW, OUTPUT_COL, OUTPUT_CHANNEL>, int32, __OUTPUT_MEMORY__);
+
+    // CIM resources
+    macros = Buffer(<N_ROW, N_COMP, N_GROUP, N_GROUP_VCOL>, int8, __MACRO__);
+    cim_output = Buffer(<1024>, int32, __CIM_OUTPUT_REG_BUFFER__);
+```
+
+</Step>
+<Step>
+
+### Register Configuration
+
+```c
+    SpecialRegSet(SPECIAL_REG_INPUT_BIT_WIDTH, 8);
+    SpecialRegSet(SPECIAL_REG_WEIGHT_BIT_WIDTH, 8);
+    SpecialRegSet(SPECIAL_REG_OUTPUT_BIT_WIDTH, 32);
+    SpecialRegSet(SPECIAL_REG_GROUP_SIZE, N_MACRO_PER_GROUP);
+    SpecialRegSet(SPECIAL_REG_SIMD_INPUT_1_BIT_WIDTH, 32);
+    SpecialRegSet(SPECIAL_REG_SIMD_OUTPUT_BIT_WIDTH, 32);
+```
+
+</Step>
+<Step>
+
+### Data Transfer
+
+```c
+    Trans(global_input, local_input);
+```
+
+</Step>
+<Step>
+
+### Compute Loop
+
+```c
+    for oh in range(0, OUTPUT_ROW, 2) carry () {
+        for ow in range(0, OUTPUT_COL, 2) carry () {
+            input_slice = local_input[oh:oh+KERNEL, ow:ow+KERNEL, :];
+            CIMComputeDense(input_slice, macros);
+            CIMOutput(N_GROUP_VCOL, 0, cim_output);
+
+            out_slice = local_output[oh:oh+2, ow:ow+2, :];
+            SIMD(VVADD, cim_output, out_slice, out_slice);
+        };
+    };
+```
+
+</Step>
+<Step>
+
+### Write Results
+
+```c
+    Trans(local_output, global_output);
+}
+```
+
+</Step>
+</Steps>
+
+<Callout type="info" title="Double Buffering">
+Production kernels often use `Buffer(<2, ...>)` to overlap data transfer with computation.
+</Callout>
+
+---
+
+## Reduce Sum
+
+A utility function for summing vector elements:
+
+<Tabs items={['Function', 'Helper']}>
+  <Tab value="Function">
+```c
+def reduce_sum(
+    vector_in< <-1>, fp16, __ANY__>,
+    vector_out< <-1>, fp16, __ANY__>
+) {
+    N = Shape(vector_in, 0);
+
+    @unroll
+    for i in range(0, N, REDUCE_LEN) carry () {
+        src_len = Min(REDUCE_LEN, N - i);
+        src = vector_in[i:i+src_len];
+
+        dst_len = div_ceil(src_len, REDUCE_LEN);
+        dst = vector_out[i/REDUCE_LEN : i/REDUCE_LEN + dst_len];
+
+        Reduce(REDUCE_SUM, src, dst);
+    };
+}
+```
+  </Tab>
+  <Tab value="Helper">
+```c
+def div_ceil(a<index>, b<index>) {
+    return ((a + b - 1) / b);
+}
+```
+  </Tab>
+</Tabs>

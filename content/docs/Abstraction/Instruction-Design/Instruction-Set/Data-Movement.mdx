@@ -1,0 +1,146 @@
+---
+title: Data Movement
+description: Memory-to-memory data transfer instructions
+---
+
+Data movement instructions enable efficient data transfer between different memory units in the architecture, supporting bulk memory operations for array manipulation and data reorganization.
+
+---
+
+## MEM_CPY
+
+Performs a data transfer between memory units with flexible addressing modes. The instruction supports optional immediate offset addressing for both source and destination through opcode variants.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">15:11</div>
+    <div className="w-[34.375%] text-center py-1.5">10:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">1100XY</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">src base</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">size</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rd</div>
+      <div className="text-xs text-fd-muted-foreground">dest base</div>
+    </div>
+    <div className="w-[34.375%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">11-bit</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">MEM_CPY rs, rt, rd, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>MEM[dest_addr] ← MEM[src_addr] (GRF[rt] bytes)</code>
+    </div>
+  </div>
+</div>
+
+### Addressing Modes
+
+The opcode bits `X` and `Y` control immediate offset addressing for source and destination:
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-mono font-semibold text-fd-primary mb-2">Source Address (X bit)</div>
+    <div className="space-y-1.5 text-sm">
+      <div className="flex items-center gap-2">
+        <code className="text-xs bg-fd-muted px-1.5 py-0.5 rounded">X=0</code>
+        <span className="text-fd-muted-foreground">src_addr = GRF[rs]</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <code className="text-xs bg-fd-muted px-1.5 py-0.5 rounded">X=1</code>
+        <span className="text-fd-muted-foreground">src_addr = GRF[rs] + imm</span>
+      </div>
+    </div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-mono font-semibold text-fd-primary mb-2">Destination Address (Y bit)</div>
+    <div className="space-y-1.5 text-sm">
+      <div className="flex items-center gap-2">
+        <code className="text-xs bg-fd-muted px-1.5 py-0.5 rounded">Y=0</code>
+        <span className="text-fd-muted-foreground">dest_addr = GRF[rd]</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <code className="text-xs bg-fd-muted px-1.5 py-0.5 rounded">Y=1</code>
+        <span className="text-fd-muted-foreground">dest_addr = GRF[rd] + imm</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+### Operation Flags
+
+The `MEM_CPY` instruction uses optional flags to enable offset addressing for source and/or destination addresses:
+
+<div className="not-prose grid gap-2 my-3">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">SRC_O</span>
+      <code className="text-sm text-fd-muted-foreground">Source Offset</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">When set, adds immediate value to source address: src_addr = GRF[rs] + imm. Otherwise: src_addr = GRF[rs]</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">DST_O</span>
+      <code className="text-sm text-fd-muted-foreground">Destination Offset</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">When set, adds immediate value to destination address: dest_addr = GRF[rd] + imm. Otherwise: dest_addr = GRF[rd]</div>
+  </div>
+</div>
+
+**Flag Combinations:**
+
+| Flags | Opcode | Source Address | Destination Address |
+|-------|--------|----------------|---------------------|
+| (none) | 110000 | GRF[rs] | GRF[rd] |
+| `DST_O` | 110001 | GRF[rs] | GRF[rd] + imm |
+| `SRC_O` | 110010 | GRF[rs] + imm | GRF[rd] |
+| `SRC_O, DST_O` | 110011 | GRF[rs] + imm | GRF[rd] + imm |
+
+<Callout type="info">
+The transfer size is specified in bytes via `GRF[rt]`. When both flags are set, the same immediate offset value is used for both source and destination addresses.
+</Callout>
+
+
+---
+
+## Examples
+
+```asm
+; Basic memory-to-memory copy (512 bytes)
+G_LI  r1, 0x1000          ; Source base address
+G_LI  r3, 0x2000          ; Destination base address
+G_LI  r2, 512             ; Transfer size (bytes)
+MEM_CPY r3, r1, r2, 0     ; Copy MEM[0x1000..0x11FF] → MEM[0x2000..0x21FF]
+
+; Copy with destination immediate offset
+G_LI  r1, 0x1000          ; Source base
+G_LI  r3, 0x2000          ; Destination base
+G_LI  r2, 256             ; Size
+MEM_CPY r3, r1, r2, 1024, DST_O  ; Copy MEM[0x1000..0x10FF] → MEM[0x2400..0x24FF]
+
+; Copy with both immediate offsets (buffer management)
+G_LI  r1, 0x8000          ; Source buffer base
+G_LI  r3, 0x9000          ; Destination buffer base
+G_LI  r2, 128             ; Transfer 128 bytes
+MEM_CPY r3, r1, r2, 1024, SRC_O, DST_O  ; Copy MEM[0x8400..0x8480) → MEM[0x9400..0x9480)
+```

@@ -1,0 +1,14 @@
+{
+    "title": "Examples",
+    "description": "Tutorials and demos",
+    "icon": "BookOpen",
+    "root": true,
+    "pages": [
+        "index",
+        "---Tutorials---",
+        "docker-tutorial",
+        "quick-start",
+        "step-by-step",
+        "design-exploration"
+    ]
+}

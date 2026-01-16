@@ -1,0 +1,299 @@
+---
+title: Design Exploration
+description: Batch processing for hardware parameter exploration
+icon: ChartColumn
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Clock } from 'lucide-react';
+
+<div className="not-prose flex items-center gap-2 mb-6 text-sm text-fd-muted-foreground">
+  <Clock className="size-4" />
+  <span>Estimated time: ~8 minutes</span>
+</div>
+
+This tutorial demonstrates batch processing to explore different hardware configurations and understand architecture trade-offs.
+
+<Callout type="warn">
+**Prerequisite**: Complete the [Step-by-Step](/docs/Examples/step-by-step) tutorial first to understand individual compilation stages.
+</Callout>
+
+---
+
+## Batch Processing Overview
+
+Instead of running one configuration at a time, CIMFlow supports batch processing through JSON configuration files:
+
+- **Design Space Exploration** — Systematically sweep hardware parameters
+- **Reproducible Experiments** — Version-controlled configuration files
+- **Structured Outputs** — Organized results for each configuration
+
+---
+
+## Exploration Matrix
+
+We'll explore a 2x2 parameter matrix to understand how NoC bandwidth and batch size affect performance:
+
+<div className="not-prose my-6 overflow-x-auto">
+  <table className="w-full border-collapse text-sm">
+    <thead>
+      <tr>
+        <th className="border border-fd-border bg-fd-muted p-3 text-left font-semibold"></th>
+        <th className="border border-fd-border bg-fd-muted p-3 text-center font-semibold">Batch Size = 1</th>
+        <th className="border border-fd-border bg-fd-muted p-3 text-center font-semibold">Batch Size = 8</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border border-fd-border bg-fd-muted p-3 font-semibold">Bandwidth = 8</td>
+        <td className="border border-fd-border p-3 text-center">Run 1: B8_batch1</td>
+        <td className="border border-fd-border p-3 text-center">Run 2: B8_batch8</td>
+      </tr>
+      <tr>
+        <td className="border border-fd-border bg-fd-muted p-3 font-semibold">Bandwidth = 16</td>
+        <td className="border border-fd-border p-3 text-center">Run 3: B16_batch1</td>
+        <td className="border border-fd-border p-3 text-center">Run 4: B16_batch8</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+---
+
+## Configuration File
+
+Create a batch configuration file:
+
+```json title="exploration.json"
+{
+  "_comment": "Design Space Exploration: Bandwidth x Batch Size",
+  "output_dir": "output/exploration",
+  "keep_ir": false,
+  "run_name": "design_exploration",
+  "runs": [
+    {
+      "_name": "B8_batch1",
+      "_comment": "Low bandwidth, single batch",
+      "model_path": "data/models/resnet18.onnx",
+      "t": 8,
+      "k": 16,
+      "b": 8,
+      "c": 64,
+      "batch_size": 1,
+      "strategy": "dp"
+    },
+    {
+      "_name": "B8_batch8",
+      "_comment": "Low bandwidth, large batch",
+      "model_path": "data/models/resnet18.onnx",
+      "t": 8,
+      "k": 16,
+      "b": 8,
+      "c": 64,
+      "batch_size": 8,
+      "strategy": "dp"
+    },
+    {
+      "_name": "B16_batch1",
+      "_comment": "High bandwidth, single batch",
+      "model_path": "data/models/resnet18.onnx",
+      "t": 8,
+      "k": 16,
+      "b": 16,
+      "c": 64,
+      "batch_size": 1,
+      "strategy": "dp"
+    },
+    {
+      "_name": "B16_batch8",
+      "_comment": "High bandwidth, large batch",
+      "model_path": "data/models/resnet18.onnx",
+      "t": 8,
+      "k": 16,
+      "b": 16,
+      "c": 64,
+      "batch_size": 8,
+      "strategy": "dp"
+    }
+  ]
+}
+```
+
+### Configuration Fields
+
+| Field | Description |
+|-------|-------------|
+| `output_dir` | Base directory for all run outputs |
+| `keep_ir` | Whether to save intermediate representations |
+| `run_name` | Name prefix for this batch |
+| `runs` | Array of individual run configurations |
+
+### Per-Run Fields
+
+| Field | Description |
+|-------|-------------|
+| `model_path` | Path to ONNX model (relative to config file) |
+| `t`, `k`, `b`, `c` | Hardware parameters |
+| `batch_size` | Inference batch size |
+| `strategy` | Mapping strategy (`dp` for dynamic programming) |
+
+---
+
+## Running Batch Exploration
+
+<Callout type="info">
+The Docker tutorial image includes `tutorial/exploration.json`. For local installation, save the configuration above to a file before running.
+</Callout>
+
+Execute all configurations with a single command:
+
+```bash title="Run batch exploration"
+cimflow run from-file tutorial/exploration.json
+```
+
+<Callout type="idea" title="What to observe during batch processing">
+- **Compilation time**: Larger batch sizes take longer (more operations to compile, more instructions generated)
+- **Simulation time**: Lower bandwidth increases communication overhead
+- **Progress**: Each configuration runs the full CG + OP + Simulation pipeline
+</Callout>
+
+---
+
+## Results Comparison
+
+After completion, results are organized by configuration:
+
+```bash
+ls output/exploration/
+```
+
+### Sample Results Table
+
+| Bandwidth | Batch Size | Latency (ms) | TOPS | TOPS/W |
+|-----------|------------|--------------|------|--------|
+| B=8       | 1          | 0.52         | 0.21 | 0.048  |
+| B=8       | 8          | 2.89         | 0.38 | 0.086  |
+| B=16      | 1          | 0.47         | 0.24 | 0.054  |
+| B=16      | 8          | 2.09         | 0.53 | 0.120  |
+
+<Callout type="warn">
+Actual values depend on the model and hardware configuration. The table above shows typical relative trends.
+</Callout>
+
+---
+
+## Extracting Metrics
+
+Parse results programmatically:
+
+```bash title="Extract key metrics from all reports"
+for report in output/exploration/simulation_report_*.txt; do
+    echo "=== $(basename $report) ==="
+    grep -E "latency:|TOPS:|TOPS/W:" "$report"
+done
+```
+
+<Callout type="idea" title="Tip">
+Pipe the output to a file or use tools like `jq` for structured analysis of multiple runs.
+</Callout>
+
+---
+
+## Best Practices
+
+<Tabs items={['Naming', 'Organization', 'Reproducibility']}>
+<Tab value="Naming">
+Use descriptive names in `_name` field:
+
+```json
+{
+  "_name": "resnet18_T8_B16_batch8",
+  "_comment": "High throughput configuration"
+}
+```
+
+This helps identify results in the output directory.
+</Tab>
+<Tab value="Organization">
+Structure output directories by experiment:
+
+```json
+{
+  "output_dir": "output/exp_2024_01_bandwidth_sweep",
+  "run_name": "bandwidth_sweep"
+}
+```
+
+Keep related experiments together.
+</Tab>
+<Tab value="Reproducibility">
+Version control your configuration files:
+
+```bash
+git add exploration.json
+git commit -m "Add bandwidth exploration config"
+```
+
+Include the config file with your results for reproducibility.
+</Tab>
+</Tabs>
+
+---
+
+## Saving Intermediate Files
+
+For debugging, enable `keep_ir`:
+
+```json
+{
+  "output_dir": "output/debug_exploration",
+  "keep_ir": true,
+  "runs": [...]
+}
+```
+
+This saves CG instructions, ISA, and logs for each run.
+
+---
+
+## Key Observations
+
+1. **Bandwidth vs Latency**: Higher bandwidth reduces communication latency, especially for communication-bound workloads.
+
+2. **Batch Size vs Throughput**: Larger batches improve TOPS but increase per-batch latency.
+
+3. **Efficiency Trade-offs**: Optimal TOPS/W depends on model architecture and hardware configuration.
+
+4. **Design Space Size**: Even small parameter sets create large design spaces—batch processing enables systematic exploration.
+
+---
+
+## Tutorial Complete
+
+Congratulations! You've completed the CIMFlow tutorial series. You now have the skills to compile neural network models to CIM hardware and evaluate different architectural configurations.
+
+### What You Learned
+
+- **Docker Tutorial** — Setup and verification
+- **Quick Start** — End-to-end pipeline execution
+- **Step-by-Step** — Individual compilation stages
+- **Design Exploration** — Batch processing for parameter sweeps
+
+### Continue Learning
+
+<Cards>
+  <Card href="/docs/Framework/cli" title="CLI Reference">
+    Complete command-line documentation
+  </Card>
+  <Card href="/docs/Framework/configuration" title="Configuration">
+    Detailed parameter documentation
+  </Card>
+  <Card href="/docs/Compiler" title="Compiler">
+    Compilation architecture details
+  </Card>
+  <Card href="/docs/Simulator" title="Simulator">
+    Simulation model documentation
+  </Card>
+</Cards>

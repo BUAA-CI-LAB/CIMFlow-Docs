@@ -1,0 +1,266 @@
+---
+title: Quickstart
+description: End-to-end pipeline tutorial
+icon: Zap
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { BookOpen, Workflow, Play, FileCode } from 'lucide-react';
+
+<Callout type="warn">
+Before starting, ensure CIMFlow is [installed](/docs/Framework/installation) and your virtual environment is activated.
+</Callout>
+
+---
+
+## Verify Installation
+
+Confirm CIMFlow is installed correctly:
+
+```bash
+# Check version
+cimflow --version
+```
+
+Expected output:
+
+```text
+CIMFlow 0.1.0
+```
+
+---
+
+## Running a Pipeline
+
+This section demonstrates running a complete compile-and-simulate pipeline with an example model.
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Navigate to CIMFlow Directory
+
+```bash
+cd /path/to/CIMFlow
+```
+
+Replace `/path/to/CIMFlow` with the actual installation directory.
+
+#### Download Example Models
+
+Example ONNX models are not included in the repository. Download them using the provided script:
+
+```bash
+./scripts/download_models.sh
+```
+
+This downloads ResNet-18 and MobileNetV2 models to `data/models/`.
+
+<Callout type="info">
+Custom ONNX models exported from PyTorch, TensorFlow, or other frameworks are also supported.
+</Callout>
+
+#### Run Pipeline with Example Model
+
+```bash
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/quickstart \
+    -t 8 \
+    -k 16 \
+    -b 16 \
+    -c 64
+```
+
+This compiles ResNet-18 and simulates execution on a 64-core CIM accelerator.
+
+#### View Results
+
+After completion, check the output:
+
+```bash
+ls output/quickstart/
+```
+
+The output directory contains simulation results including performance metrics.
+
+</div>
+
+---
+
+## Understanding the Output
+
+The simulation produces several key metrics:
+
+| Metric | Description |
+|--------|-------------|
+| **Cycles** | Total clock cycles for inference |
+| **Latency** | Execution time based on target clock frequency |
+| **Energy** | Estimated energy consumption |
+| **Throughput** | Inferences per second |
+
+Detailed breakdowns are available in the output JSON files.
+
+---
+
+## Running with Custom Parameters
+
+Adjust hardware parameters via CLI flags:
+
+```bash
+cimflow run pipeline \
+    -m data/models/mobilenetv2.onnx \
+    -o output/mobilenet \
+    -t 16 \
+    -k 32 \
+    -b 8 \
+    -c 128 \
+    --batch-size 4
+```
+
+| Flag | Parameter | Description |
+|------|-----------|-------------|
+| `-t` | T | Macro group size |
+| `-k` | K | Macro group number |
+| `-b` | B | NoC flit size (bandwidth) |
+| `-c` | C | Core number |
+| `--batch-size` | - | Batch size |
+
+For the complete parameter reference, see [CLI Reference](/docs/Framework/cli).
+
+---
+
+## Batch Processing
+
+Run multiple configurations from a JSON file:
+
+**Copy template:**
+
+```bash
+cp config_templates/batch.json config/batch.json
+```
+
+**Run batch:**
+
+Edit `config/batch.json` with your models and parameters, then run:
+
+```bash
+cimflow run from-file config/batch.json
+```
+
+**Example configuration** (update `model_path` to point to your ONNX model):
+
+```json title="config/batch.json"
+{
+  "paths_cfg": "tool_paths.json",
+  "output_dir": "output",
+  "keep_ir": false,
+  "run_name": "batch",
+  "runs": [
+    {
+      "model_path": "path/to/your/model.onnx",
+      "t": 8,
+      "k": 16,
+      "b": 16,
+      "c": 64,
+      "batch_size": 8,
+      "strategy": "dp",
+      "visualize": false
+    }
+  ]
+}
+```
+
+---
+
+## Enabling Profiling
+
+Enable profiling for performance breakdowns:
+
+```bash
+cimflow run pipeline \
+    -m data/models/resnet18.onnx \
+    -o output/profiled \
+    --profile=from-config
+```
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Per-Layer Timing</div>
+    <div className="text-sm text-fd-muted-foreground">Execution time breakdown for each layer</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Memory Bandwidth</div>
+    <div className="text-sm text-fd-muted-foreground">Utilization statistics for data movement</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Core Activity</div>
+    <div className="text-sm text-fd-muted-foreground">Per-core utilization and idle cycles</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Energy Breakdown</div>
+    <div className="text-sm text-fd-muted-foreground">Energy consumption by component type</div>
+  </div>
+</div>
+
+---
+
+## Debugging Tips
+
+<Callout type="info">
+These options are useful for troubleshooting compilation or simulation issues.
+</Callout>
+
+### Keep Intermediate Files
+
+```bash
+cimflow run pipeline -m model.onnx -o output --keep-ir
+```
+
+Saves all IR files, ISA outputs, and logs in timestamped directories.
+
+### Enable Debug Mode
+
+```bash
+cimflow --debug run pipeline -m model.onnx -o output
+```
+
+Produces detailed tracebacks and debug-level logging.
+
+### Increase Log Verbosity
+
+```bash
+cimflow run pipeline -m model.onnx -o output -l VERBOSE
+```
+
+Log levels: `TRACE` | `DEBUG` | `VERBOSE` | `INFO` | `WARNING` | `ERROR`
+
+---
+
+## CLI Quick Reference
+
+| Command | Description |
+|---------|-------------|
+| `cimflow --help` | View all commands |
+| `cimflow run pipeline --help` | Pipeline options |
+| `cimflow run from-file --help` | Batch processing options |
+| `cimflow compile --help` | Compile only |
+| `cimflow sim --help` | Simulate only |
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card icon={<BookOpen className="text-rose-400" />} href="/docs/Examples" title="Examples">
+    Tutorials and use cases
+  </Card>
+  <Card icon={<Workflow className="text-purple-400" />} href="/docs/Compiler" title="Compiler">
+    Two-level compilation architecture
+  </Card>
+  <Card icon={<Play className="text-emerald-400" />} href="/docs/Simulator" title="Simulator">
+    Cycle-accurate simulation model
+  </Card>
+  <Card icon={<FileCode className="text-blue-400" />} href="/docs/Framework/cli" title="CLI Reference">
+    Command-line documentation
+  </Card>
+</Cards>

@@ -1,0 +1,302 @@
+---
+title: Docker Tutorial
+description: Setup and verify CIMFlow with Docker
+icon: Container
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Clock } from 'lucide-react';
+
+<div className="not-prose flex items-center gap-2 mb-6 text-sm text-fd-muted-foreground">
+  <Clock className="size-4" />
+  <span>Estimated time: ~10 minutes</span>
+</div>
+
+This tutorial verifies your CIMFlow installation and introduces the CLI commands.
+
+---
+
+## Pull the Docker Image
+
+```bash title="Pull the tutorial image"
+docker pull ghcr.io/buaa-ci-lab/cimflow-tutorial:latest
+```
+
+<Callout type="info">
+The download is approximately 3GB. Ensure 15GB or more disk space is available after unpacking.
+</Callout>
+
+---
+
+## Start Interactive Session
+
+<Tabs items={['Linux/macOS', 'PowerShell', 'CMD']}>
+<Tab value="Linux/macOS">
+```bash
+docker run -it --rm \
+  -v "$(pwd)/output:/app/output" \
+  ghcr.io/buaa-ci-lab/cimflow-tutorial:latest
+```
+</Tab>
+<Tab value="PowerShell">
+```powershell
+docker run -it --rm `
+  -v "${PWD}/output:/app/output" `
+  ghcr.io/buaa-ci-lab/cimflow-tutorial:latest
+```
+</Tab>
+<Tab value="CMD">
+```cmd
+docker run -it --rm -v "%cd%/output:/app/output" ghcr.io/buaa-ci-lab/cimflow-tutorial:latest
+```
+</Tab>
+</Tabs>
+
+This mounts a local `output` directory to persist results outside the container.
+
+---
+
+## Verify Installation
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Check CIMFlow Version
+
+```bash
+cimflow --version
+```
+
+Expected output:
+
+```text
+CIMFlow 0.1.0
+```
+
+#### View Available Commands
+
+```bash
+cimflow --help
+```
+
+Output shows the main command groups:
+
+```text
+Usage: cimflow [OPTIONS] COMMAND [ARGS]...
+
+  CIMFlow - compile & simulate SRAM-based digital CIM
+
+Options:
+  --version             -V  Show CIMFlow version and exit.
+  --debug                   Enable debug mode with full tracebacks and detailed error information.
+  --install-completion      Install completion for the current shell.
+  --show-completion         Show completion for the current shell, to copy it or customize the installation.
+  --help                -h  Show this message and exit.
+
+Commands:
+  compile   Compiler front-end.
+  sim       Simulator commands.
+  run       Run compile and simulation pipeline.
+```
+
+#### Explore Pipeline Commands
+
+```bash
+cimflow run --help
+```
+
+Shows pipeline execution options:
+
+```text
+Commands:
+  pipeline    Run full pipeline: compile (CG + OP) → simulate.
+  from-file   Run one or more pipelines defined in a JSON file.
+```
+
+#### Explore Compile Commands
+
+```bash
+cimflow compile --help
+```
+
+Shows compilation stages:
+
+```text
+Commands:
+  cg   Compile at computation graph level.
+  op   Compile at operator level.
+```
+
+</div>
+
+---
+
+## Check Component Versions
+
+Verify the underlying compiler and simulator:
+
+```bash
+cim-compiler --version
+cim-simulator --version
+```
+
+---
+
+## Install Shell Completion
+
+Enable tab completion for faster command entry:
+
+```bash
+cimflow --install-completion
+source ~/.bashrc
+```
+
+After sourcing, you can use Tab to complete commands and flags:
+
+```bash
+cimflow run pi<TAB>  # completes to "pipeline"
+cimflow run pipeline -<TAB>  # shows available flags
+```
+
+---
+
+## Check Example Models
+
+Verify models are available:
+
+```bash
+ls -lh data/models/
+```
+
+Expected output:
+
+```text
+-rw-r--r-- 1 root root  45M resnet18.onnx
+-rw-r--r-- 1 root root  14M mobilenetv2.onnx
+```
+
+<Callout type="warn">
+If models are not present, they will be downloaded automatically on first pipeline run.
+</Callout>
+
+---
+
+## Docker Image Variants
+
+| Image | Download | Use Case |
+|-------|----------|----------|
+| `cimflow-tutorial:latest` | ~3GB | Pre-built, ready to use |
+| `cimflow-tutorial:dev-base` | ~1GB | Build from source |
+
+### Using the Dev Base Image
+
+For development or building from source:
+
+```bash
+docker pull ghcr.io/buaa-ci-lab/cimflow-tutorial:dev-base
+```
+
+<Tabs items={['Linux/macOS', 'PowerShell', 'CMD']}>
+<Tab value="Linux/macOS">
+```bash
+docker run -it --rm \
+  -v /path/to/cimflow:/app/cimflow \
+  ghcr.io/buaa-ci-lab/cimflow-tutorial:dev-base
+```
+</Tab>
+<Tab value="PowerShell">
+```powershell
+docker run -it --rm `
+  -v C:\path\to\cimflow:/app/cimflow `
+  ghcr.io/buaa-ci-lab/cimflow-tutorial:dev-base
+```
+</Tab>
+<Tab value="CMD">
+```cmd
+docker run -it --rm -v C:\path\to\cimflow:/app/cimflow ghcr.io/buaa-ci-lab/cimflow-tutorial:dev-base
+```
+</Tab>
+</Tabs>
+
+```bash title="Inside container"
+cd /app/cimflow
+./install.sh --shallow
+```
+
+---
+
+## Troubleshooting
+
+<Accordions>
+<Accordion title="Permission denied on output directory (Linux/macOS)">
+
+Run with user mapping:
+
+```bash
+docker run -it --rm \
+  -v "$(pwd)/output:/app/output" \
+  --user $(id -u):$(id -g) \
+  ghcr.io/buaa-ci-lab/cimflow-tutorial:latest
+```
+
+</Accordion>
+
+<Accordion title="Models not found">
+
+Models are downloaded automatically on first pipeline run. To download manually:
+
+```bash
+./scripts/download_models.sh
+```
+
+Use `--force` to re-download if models are corrupted:
+
+```bash
+./scripts/download_models.sh --force
+```
+
+</Accordion>
+
+</Accordions>
+
+---
+
+## File Structure
+
+The container working directory structure:
+
+<Files>
+  <Folder name="/app/cimflow" defaultOpen>
+    <Folder name="data/models" defaultOpen>
+      <File name="resnet18.onnx" />
+      <File name="mobilenetv2.onnx" />
+    </Folder>
+    <Folder name="tutorial" defaultOpen>
+      <File name="demo0_setup.sh" />
+      <File name="demo1_quickstart.sh" />
+      <File name="demo2_stages.sh" />
+      <File name="demo3_exploration.sh" />
+      <File name="exploration.json" />
+    </Folder>
+    <Folder name="scripts">
+      <File name="download_models.sh" />
+    </Folder>
+    <Folder name="config">
+      <File name="tool_paths.json" />
+    </Folder>
+    <Folder name="modules">
+      <Folder name="CIMFlow-Compiler" />
+      <Folder name="CIMFlow-Simulator" />
+    </Folder>
+  </Folder>
+</Files>
+
+---
+
+## What You Learned
+
+- **Docker Setup** — Pulled and started the CIMFlow tutorial container
+- **CLI Exploration** — Learned the main CIMFlow commands and structure
+

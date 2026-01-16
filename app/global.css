@@ -5,6 +5,13 @@
 @source '../node_modules/fumadocs-ui/dist/**/*.js';
 
 :root {
+  /* Section accent colors */
+  --framework-color: hsl(41, 100%, 40%);
+  --abstraction-color: hsl(217, 100%, 58%);
+  --compiler-color: hsl(280, 80%, 55%);
+  --simulator-color: hsl(160, 70%, 40%);
+  --examples-color: hsl(350, 80%, 55%);
+
   /* Animation timings */
   --transition-fast: 150ms;
   --transition-normal: 250ms;
@@ -103,3 +110,39 @@
 .button-hover-slide:hover::after {
   height: 100%;
 }
+
+/* Section-specific primary colors */
+.framework {
+  --color-fd-primary: var(--framework-color);
+}
+
+.abstraction {
+  --color-fd-primary: var(--abstraction-color);
+}
+
+.compiler {
+  --color-fd-primary: var(--compiler-color);
+}
+
+.simulator {
+  --color-fd-primary: var(--simulator-color);
+}
+
+.examples {
+  --color-fd-primary: var(--examples-color);
+}
+
+html.dark,
+.dark {
+  --framework-color: #fff383;
+  --abstraction-color: #a9ceff;
+  --compiler-color: #d8b4fe;
+  --simulator-color: #6ee7b7;
+  --examples-color: #fda4af;
+}
+
+/* Prevent layout shift when scrollbar appears/disappears */
+html {
+  scrollbar-gutter: stable;
+}
+

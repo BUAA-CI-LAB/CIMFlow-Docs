@@ -1,0 +1,171 @@
+---
+title: Register Files
+description: General and special register files for CIM cores
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Each core maintains two register files: a General Register File (GRF) for arithmetic and addressing, and a Special Register File (SRF) for hardware configuration.
+
+---
+
+## General Register File (GRF)
+
+32 general-purpose registers (`r0`–`r31`) encoded with 5-bit addresses. Used for:
+
+- **Arithmetic operations**: Counters, loop indices, intermediate values
+- **Address calculation**: Base addresses, offsets, pointers
+- **Temporary storage**: Function arguments, return values
+
+<Callout>
+Register `r0` is hardwired to zero. Writes to `r0` are ignored.
+</Callout>
+
+---
+
+## Special Register File (SRF)
+
+32 special-purpose registers configure the CIM and Vector execution units.
+
+### CIM Configuration (IDs 0-15)
+
+#### Bit Widths
+
+<div className="not-prose grid gap-2 sm:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_IBW</code>
+      <span className="text-xs text-fd-muted-foreground">ID 0</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input bit width</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_OBW</code>
+      <span className="text-xs text-fd-muted-foreground">ID 1</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Output bit width</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_WBW</code>
+      <span className="text-xs text-fd-muted-foreground">ID 2</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Weight bit width</div>
+  </div>
+</div>
+
+#### Array Configuration
+
+<div className="not-prose grid gap-2 sm:grid-cols-2 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_GSZ</code>
+      <span className="text-xs text-fd-muted-foreground">ID 3</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Macros per group</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_AG</code>
+      <span className="text-xs text-fd-muted-foreground">ID 4</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Active groups</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_AE</code>
+      <span className="text-xs text-fd-muted-foreground">ID 5</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Active elements per column</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">CIM_GSTEP</code>
+      <span className="text-xs text-fd-muted-foreground">ID 6</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Group input step offset</div>
+  </div>
+</div>
+
+IDs 7-15 are reserved.
+
+---
+
+### Vector Configuration (IDs 16-31)
+
+#### Input Bit Widths
+
+<div className="not-prose grid gap-2 sm:grid-cols-2 lg:grid-cols-4 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_IBW1</code>
+      <span className="text-xs text-fd-muted-foreground">ID 16</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input 1 bit width</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_IBW2</code>
+      <span className="text-xs text-fd-muted-foreground">ID 17</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input 2 bit width</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_IBW3</code>
+      <span className="text-xs text-fd-muted-foreground">ID 18</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input 3 bit width</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_IBW4</code>
+      <span className="text-xs text-fd-muted-foreground">ID 19</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input 4 bit width</div>
+  </div>
+</div>
+
+#### Output & Addresses
+
+<div className="not-prose grid gap-2 sm:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_OBW</code>
+      <span className="text-xs text-fd-muted-foreground">ID 20</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Output bit width</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_IA3</code>
+      <span className="text-xs text-fd-muted-foreground">ID 21</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input 3 address</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card">
+    <div className="flex items-center justify-between">
+      <code className="font-semibold text-fd-primary">VEC_IA4</code>
+      <span className="text-xs text-fd-muted-foreground">ID 22</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Input 4 address</div>
+  </div>
+</div>
+
+IDs 23-31 are reserved.
+
+---
+
+## Register Binding
+
+Special-purpose registers can be bound to general-purpose registers to reduce assignment overhead.
+
+```json
+[
+  { "special": 3, "general": 30 },
+  { "special": 4, "general": 31 }
+]
+```
+
+This binds `CIM_GSZ` (ID 3) to `r30` and `CIM_AG` (ID 4) to `r31`.

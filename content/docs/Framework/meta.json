@@ -1,0 +1,18 @@
+{
+  "title": "Framework",
+  "description": "Workflow and usage guide",
+  "icon": "Boxes",
+  "root": true,
+  "pages": [
+    "index",
+    "---Introduction---",
+    "what-is-cimflow",
+    "features",
+    "---Getting Started---",
+    "installation",
+    "quickstart",
+    "---Reference---",
+    "cli",
+    "configuration"
+  ]
+}

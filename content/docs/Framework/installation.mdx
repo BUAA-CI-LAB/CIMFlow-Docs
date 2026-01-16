@@ -1,0 +1,342 @@
+---
+title: Installation
+description: Installing CIMFlow on Linux systems
+icon: Download
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Monitor, HardDrive, Cpu, MemoryStick } from 'lucide-react';
+
+## System Requirements
+
+<div className="not-prose grid gap-3 grid-cols-2 sm:grid-cols-4 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Monitor className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">OS</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Ubuntu 22.04+</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Python</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">3.11 or later</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <HardDrive className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Disk</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">15 GB or more</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <MemoryStick className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">RAM</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">8 GB min, 16 GB recommended</div>
+  </div>
+</div>
+
+<Callout type="info">
+Installation instructions are provided for Ubuntu/Debian. Contributions for other Linux distributions are welcome.
+</Callout>
+
+---
+
+## Python Environment Setup
+
+Create an isolated Python environment for CIMFlow.
+
+<Tabs items={['Conda (Recommended)', 'venv']}>
+  <Tab value="Conda (Recommended)">
+    Create environment with Python 3.11:
+
+    ```bash
+    conda create -n cimflow python=3.11
+    conda activate cimflow
+    ```
+
+    If Conda is not installed, see the [Miniconda installation guide](https://docs.conda.io/en/latest/miniconda.html).
+  </Tab>
+  <Tab value="venv">
+    Create virtual environment:
+
+    ```bash
+    python3.11 -m venv .venv
+    source .venv/bin/activate
+    ```
+
+    Ensure Python 3.11 is available on your system before creating the venv.
+  </Tab>
+</Tabs>
+
+---
+
+## System Dependencies
+
+Install required system packages:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Build Tools
+
+```bash
+sudo apt install build-essential cmake ninja-build ccache
+```
+
+#### Clang Toolchain
+
+Required for LLVM/MLIR compilation.
+
+```bash
+sudo apt install clang lld
+```
+
+#### Java Development Kit
+
+Required for ANTLR parser generation.
+
+```bash
+sudo apt install openjdk-11-jdk
+```
+
+#### Required Libraries
+
+```bash
+sudo apt install libeigen3-dev libunwind-dev
+```
+
+</div>
+
+---
+
+## Installation
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Clone the Repository
+
+```bash
+git clone https://github.com/BUAA-CI-LAB/CIMFlow.git
+cd CIMFlow
+```
+
+#### Run Installation Script
+
+With your virtual environment activated:
+
+```bash
+./install.sh
+```
+
+<Callout type="warn">
+The first installation takes **20-30 minutes** to build LLVM/MLIR. Subsequent builds are faster with ccache. Do not interrupt the installation during submodule initialization.
+</Callout>
+
+The installation script performs the following:
+
+1. Initializes top-level submodules (CIMFlow-Compiler, CIMFlow-Simulator)
+2. Initializes nested submodules (including LLVM/MLIR)
+3. Builds and installs submodules (compiler and simulator)
+4. Installs the main CIMFlow Python package and CLI tools
+5. Sets up configuration in `config/tool_paths.json`
+
+</div>
+
+---
+
+## Post-Installation
+
+Verify the installation:
+
+```bash
+cimflow --version
+```
+
+Expected output:
+
+```text
+CIMFlow 0.1.0
+```
+
+View available commands:
+
+```bash
+cimflow --help
+```
+
+Check that the configuration file exists:
+
+```bash
+cat config/tool_paths.json
+```
+
+This file contains paths to the compiler and simulator executables generated during installation.
+
+---
+
+## Installation Options
+
+<Accordions>
+  <Accordion title="Shallow Clone (Faster Installation)">
+    Use shallow clones to reduce download time and disk space:
+
+    ```bash
+    ./install.sh --shallow
+    ```
+
+    This fetches only recent history for submodules, suitable for users who do not require full git history.
+  </Accordion>
+  <Accordion title="Resume Interrupted Installation">
+    If installation was interrupted, resume from the last completed step:
+
+    ```bash
+    ./install.sh --resume
+    ```
+
+    Progress is tracked in `.install_progress`. Combine with `--repair` if submodules are in a broken state:
+
+    ```bash
+    ./install.sh --resume --repair
+    ```
+  </Accordion>
+  <Accordion title="Repair Broken Submodules">
+    Fix broken or dirty submodules (discards local changes):
+
+    ```bash
+    ./install.sh --repair
+    ```
+
+    Use this when encountering errors related to submodule state or uncommitted changes.
+  </Accordion>
+  <Accordion title="Clean Installation">
+    Remove progress file and start fresh:
+
+    ```bash
+    ./install.sh --clean
+    ```
+
+    Combine with `--shallow` for a complete fresh shallow installation:
+
+    ```bash
+    ./install.sh --clean --shallow
+    ```
+  </Accordion>
+  <Accordion title="Uninstall">
+    Remove installed packages and build artifacts:
+
+    ```bash
+    ./install.sh --uninstall
+    ```
+
+    To also remove submodule source code:
+
+    ```bash
+    ./install.sh --uninstall --force
+    ```
+  </Accordion>
+</Accordions>
+
+---
+
+## Troubleshooting
+
+<Accordions>
+  <Accordion title="Submodule Initialization Failures">
+    **Symptom:** Errors during `git submodule update` or empty submodule directories.
+
+    **Solution:**
+
+    1. Check network connectivity to GitHub
+    2. Run repair mode: `./install.sh --repair`
+    3. If issues persist, force uninstall and reinstall:
+
+    ```bash
+    ./install.sh --uninstall --force
+    ./install.sh --shallow
+    ```
+  </Accordion>
+  <Accordion title="LLVM Build Errors">
+    **Symptom:** Build failures during LLVM/MLIR compilation.
+
+    **Common causes:**
+    - Insufficient disk space (requires 15 GB or more)
+    - Insufficient RAM (may need to reduce parallel jobs)
+    - Missing Clang/LLD toolchain
+
+    **Solution:**
+
+    1. Ensure sufficient disk space: `df -h`
+    2. Install Clang toolchain: `sudo apt install clang lld`
+    3. Resume installation: `./install.sh --resume`
+  </Accordion>
+  <Accordion title="Python Environment Issues">
+    **Symptom:** `ModuleNotFoundError` or package import failures.
+
+    **Solution:**
+
+    1. Verify correct environment is activated:
+
+    ```bash
+    which python
+    python --version
+    ```
+
+    2. Reinstall Python packages:
+
+    ```bash
+    pip install -e .
+    ```
+
+    3. Check that `cimflow` is in PATH:
+
+    ```bash
+    which cimflow
+    ```
+  </Accordion>
+  <Accordion title="Command Not Found: cimflow">
+    **Symptom:** `cimflow: command not found` after installation.
+
+    **Solution:**
+
+    1. Ensure virtual environment is activated
+    2. Verify pip installation completed:
+
+    ```bash
+    pip show cimflow
+    ```
+
+    3. Check PATH includes pip bin directory:
+
+    ```bash
+    echo $PATH
+    ```
+
+    4. Reinstall the package:
+
+    ```bash
+    pip install -e .
+    ```
+  </Accordion>
+</Accordions>
+
+---
+
+## Development Installation
+
+For contributors modifying CIMFlow:
+
+```bash
+git clone https://github.com/BUAA-CI-LAB/CIMFlow.git
+cd CIMFlow
+git submodule update --init --recursive
+./install.sh
+```
+
+See [CONTRIBUTING.md](https://github.com/BUAA-CI-LAB/CIMFlow/blob/main/CONTRIBUTING.md) for development guidelines.

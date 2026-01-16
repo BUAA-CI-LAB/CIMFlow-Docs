@@ -1,0 +1,209 @@
+---
+title: Intra-Core Control
+description: Control flow instructions for branching and jumping
+---
+
+Intra-core control instructions manage program execution flow within a single core, providing both conditional branching based on register comparisons and unconditional jumps using PC-relative addressing.
+
+---
+
+## BRANCH
+
+Performs a conditional jump based on comparison of two register values. The instruction supports four comparison types encoded in the opcode, enabling efficient decision-making for loops, conditionals, and control flow.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">25:21</div>
+    <div className="w-[15.625%] text-center py-1.5 border-r border-fd-border">20:16</div>
+    <div className="w-[50%] text-center py-1.5">15:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">1110XX</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rs</div>
+      <div className="text-xs text-fd-muted-foreground">operand 1</div>
+    </div>
+    <div className="w-[15.625%] py-3 border-l border-fd-border">
+      <div className="font-mono font-medium">rt</div>
+      <div className="text-xs text-fd-muted-foreground">operand 2</div>
+    </div>
+    <div className="w-[50%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">16-bit offset</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">BRANCH rs, rt, imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>if (GRF[rs] ⊙ GRF[rt]) then PC ← PC + imm</code>
+    </div>
+  </div>
+</div>
+
+### Branch Variants
+
+The opcode bits `XX` specify the comparison operation:
+
+<div className="not-prose grid gap-2 sm:grid-cols-2 lg:grid-cols-4 my-4">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">BEQ</span>
+      <code className="text-sm text-fd-muted-foreground">111000</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Branch if Equal</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">rs == rt</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">BNE</span>
+      <code className="text-sm text-fd-muted-foreground">111001</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Branch if Not Equal</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">rs != rt</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">BGT</span>
+      <code className="text-sm text-fd-muted-foreground">111010</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Branch if Greater Than</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">rs > rt</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm">
+    <div className="flex items-center justify-between mb-1">
+      <span className="font-mono font-semibold text-fd-primary">BLT</span>
+      <code className="text-sm text-fd-muted-foreground">111011</code>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Branch if Less Than</div>
+    <div className="text-xs text-fd-muted-foreground mt-1">rs < rt</div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 lg:grid-cols-3 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rs]</code>
+      <span className="text-xs text-fd-muted-foreground">First Operand</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Left-hand side value in comparison</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF[rt]</code>
+      <span className="text-xs text-fd-muted-foreground">Second Operand</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Right-hand side value in comparison</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Branch Offset</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">16-bit signed offset relative to PC (range: -32768 to 32767)</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout type="info">
+Branch offset is PC-relative: `target = PC + imm`. The offset is measured in instruction units from the next instruction.
+</Callout>
+
+---
+
+## JMP
+
+Performs an unconditional jump to a target address specified by a PC-relative offset. Unlike BRANCH, JMP always transfers control regardless of any condition.
+
+<div className="not-prose mb-6 rounded-xl overflow-hidden shadow-sm border border-fd-border">
+  <div className="flex bg-fd-muted/50 text-xs text-fd-muted-foreground font-mono">
+    <div className="w-[18.75%] text-center py-1.5 border-r border-fd-border">31:26</div>
+    <div className="w-[81.25%] text-center py-1.5">25:0</div>
+  </div>
+  <div className="flex text-center border-t border-fd-border">
+    <div className="w-[18.75%] py-3 bg-gradient-to-b from-fd-primary/5 to-fd-primary/10">
+      <div className="font-mono font-semibold text-fd-primary">111100</div>
+      <div className="text-xs text-fd-muted-foreground">opcode</div>
+    </div>
+    <div className="w-[81.25%] py-3 bg-fd-accent/15 border-l border-fd-border">
+      <div className="font-mono font-medium">imm</div>
+      <div className="text-xs text-fd-muted-foreground">26-bit offset</div>
+    </div>
+  </div>
+  <div className="px-4 py-3 bg-fd-muted/30 border-t border-fd-border grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Syntax</div>
+      <code className="text-fd-primary">JMP imm</code>
+    </div>
+    <div>
+      <div className="text-xs text-fd-muted-foreground uppercase tracking-wide mb-1">Operation</div>
+      <code>PC ← PC + imm</code>
+    </div>
+  </div>
+</div>
+
+<Accordions>
+<Accordion title="Parameters">
+
+<div className="not-prose grid gap-3 sm:grid-cols-1 my-4">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">imm</code>
+      <span className="text-xs text-fd-muted-foreground">Jump Offset</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">26-bit signed offset relative to PC (range: -33,554,432 to 33,554,431). Larger range than BRANCH enables long-distance jumps.</div>
+  </div>
+</div>
+
+</Accordion>
+</Accordions>
+
+<Callout type="info">
+JMP provides a larger offset range (26 bits) compared to BRANCH (16 bits), enabling jumps across larger code sections.
+</Callout>
+
+---
+
+## Examples
+
+```asm
+; Simple if-then-else
+G_LI  r1, 10
+G_LI  r2, 20
+BLT   r1, r2, 3        ; if (10 < 20), jump 3 instructions
+G_LI  r3, 0            ; else: r3 = 0
+JMP   2                ; skip then block (2 instructions)
+G_LI  r3, 1            ; then: r3 = 1
+
+; Counting loop
+G_LI  r1, 0            ; i = 0
+G_LI  r2, 10           ; limit = 10
+G_LI  r3, 0            ; sum = 0
+
+; loop_start:
+BEQ   r1, r2, 4        ; if (i == 10), jump to loop_end (4 instructions)
+SC_ADD r3, r3, r1      ; sum += i
+SC_ADDI r1, r1, 1      ; i++
+JMP   -3               ; jump back to loop_start (-3 instructions)
+; loop_end:
+
+; Nested conditionals
+BNE   r1, r2, 4        ; if r1 != r2, jump to else_block
+BGT   r3, r4, 2        ; if r3 > r4, jump to inner_then
+JMP   1                ; skip inner_then
+; inner_then:
+; code here
+; else_block:
+```

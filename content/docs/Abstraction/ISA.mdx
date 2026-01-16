@@ -1,0 +1,74 @@
+---
+title: Instruction Set Architecture
+description: Programming interface for SRAM-based CIM accelerators
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Cpu, Layers, GitBranch, Binary } from 'lucide-react';
+
+The CIMFlow ISA defines the programming interface for SRAM-based Compute-in-Memory accelerators. It maps neural network operations to hardware through a hierarchical abstraction model, enabling efficient compilation and execution of deep learning workloads.
+
+## Hardware Hierarchy
+
+The ISA models CIM hardware at [three abstraction levels](/docs/Abstraction/Hardware-Abstractions):
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Chip</div>
+    <div className="text-sm text-fd-muted-foreground">Multi-core topology with NoC and global memory</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Core</div>
+    <div className="text-sm text-fd-muted-foreground">Execution unit with local memory and registers</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Unit</div>
+    <div className="text-sm text-fd-muted-foreground">CIM arrays, vector ALU, and scalar control</div>
+  </div>
+</div>
+
+Each core executes its own instruction stream and coordinates with others through explicit synchronization primitives.
+
+## Instruction Categories
+
+[Instructions](/docs/Abstraction/Instruction-Design/Instruction-Set) follow RISC design principles with a fixed 32-bit encoding. They fall into three categories:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Compute
+Matrix-vector multiplication, vector element-wise operations, and scalar arithmetic.<br/>
+e.g. `CIM_MVM` · `VEC_OP` · `REDUCE` · `SC_RR` · `SC_RI`
+
+#### Communication
+Memory load/store, data movement, and inter-core send/receive.<br/>
+e.g. `SC_LD` · `SC_ST` · `MEM_CPY` · `SEND` · `RECV`
+
+#### Control Flow
+Conditional branches, jumps, barriers, and synchronization tags.<br/>
+e.g. `BRANCH` · `JMP` · `WAIT` · `BARRIER` · `TAG`
+
+</div>
+
+## Register Files
+
+Each core maintains two register files—see [Register Files](/docs/Abstraction/Instruction-Design/Register-Files) for the complete map:
+
+- **General Register File (GRF)**: 32 registers (`r0`–`r31`) for addresses, counters, and arithmetic
+- **Special Register File (SRF)**: 32 registers for CIM configuration (IDs 0–15) and vector parameters (IDs 16–31)
+
+## Design Principles
+
+<Cards>
+  <Card icon={<Cpu className="text-blue-400" />} title="CIM-Native Operations">
+    `CIM_MVM` directly drives the in-memory compute array for matrix-vector multiplication.
+  </Card>
+  <Card icon={<GitBranch className="text-green-400" />} title="Explicit Parallelism">
+    `SEND`/`RECV` for inter-core data transfer, `WAIT`/`BARRIER`/`TAG` for synchronization.
+  </Card>
+  <Card icon={<Binary className="text-amber-400" />} title="Uniform Encoding">
+    32-bit instructions with 6-bit opcode across five encoding types (R, I-A, I-B, I-C, J).
+  </Card>
+  <Card icon={<Layers className="text-purple-400" />} title="Configurable Precision">
+    SRF controls input, output, and weight bit widths for mixed-precision compute.
+  </Card>
+</Cards>

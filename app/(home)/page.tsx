@@ -1,10 +1,10 @@
 import {
-  RocketIcon, 
-  CodeIcon, 
-  CpuIcon, 
-  LayoutIcon, 
-  BookOpenIcon, 
-  UsersIcon, 
+  RocketIcon,
+  CodeIcon,
+  CpuIcon,
+  LayoutIcon,
+  BookOpenIcon,
+  UsersIcon,
   ChevronRightIcon,
   FlaskConicalIcon,
   MousePointerIcon,
@@ -22,14 +22,14 @@ export default function HomePage() {
   return (
     <>
       <div className="absolute inset-x-0 top-[-7px] h-[850px] max-md:hidden grid-pattern" />
-      <main className="container relative max-w-[1100px] px-4 py-6 z-[2] lg:py-10">
+      <main className="container relative max-w-[1100px] mx-auto px-4 py-6 z-[2] lg:py-10">
         <div className="relative">
-          <Hero />          
-          <Architecture/>
+          <Hero />
+          <Architecture />
           <Why />
           <Documentation />
           <Publications />
-          <Footer />        
+          <Footer />
         </div>
       </main>
     </>
@@ -45,12 +45,12 @@ function Hero() {
       </h1>
       <br />
       <p className="mb-8 text-fd-muted-foreground md:max-w-[80%] md:text-xl">
-        CIMFlow is an integrated, open-source framework designed to bridge the gap between 
+        CIMFlow is an integrated, open-source framework designed to bridge the gap between
         software and hardware for DNN workloads on CIM architectures.
       </p>
       <div className="inline-flex items-center gap-3 max-md:mx-auto">
         <Link
-          href="/docs"
+          href="/docs/Framework"
           className={cn(
             buttonVariants({ size: 'lg', className: 'rounded-full' }),
           )}
@@ -58,7 +58,7 @@ function Hero() {
           Getting Started
         </Link>
         <Link
-          href="/docs"
+          href="/docs/Examples"
           className={cn(
             buttonVariants({
               size: 'lg',
@@ -93,34 +93,28 @@ function ArchitectureText() {
         A unified framework for CIM architecture research.
       </h2>
       <p className="text-fd-muted-foreground mb-6">
-        CIMFlow includes an Instruction Set Architecture (ISA), 
+        CIMFlow includes an Instruction Set Architecture (ISA),
         an MLIR-based compiler, and a SystemC-based simulator.
         <br />
         <br />
-        Its modular design supports flexible exploration of architectural configurations, enabling users 
+        Its modular design supports flexible exploration of architectural configurations, enabling users
         to easily adapt and validate their systems against diverse DNN workloads.
       </p>
       <div className="flex flex-row items-center font-mono -mx-4">
         <Link
-          href="#"
-          rel="noreferrer noopener"
-          target="_blank"
+          href="/docs/Abstraction/ISA"
           className={cn(buttonVariants({ variant: 'link' }))}
         >
           ISA
         </Link>
         <Link
-          href="#"
-          rel="noreferrer noopener"
-          target="_blank"
+          href="/docs/Compiler"
           className={cn(buttonVariants({ variant: 'link' }))}
         >
           Compiler
         </Link>
         <Link
-          href="#"
-          rel="noreferrer noopener"
-          target="_blank"
+          href="/docs/Simulator"
           className={cn(buttonVariants({ variant: 'link' }))}
         >
           Simulator
@@ -134,11 +128,11 @@ function ArchitectureImage() {
   return (
     <div className="flex justify-center items-center">
       <Image
-      src={archImagePath}
-      alt="Architecture"
-      width={450}
-      height={450}
-      className="md:-mt-20 w-full lg:max-w-[450px] lg-md:max-w-[300px] md:max-w-[330px] invert dark:invert-0 max-md:hidden"
+        src={archImagePath}
+        alt="Architecture"
+        width={450}
+        height={450}
+        className="md:-mt-20 w-full lg:max-w-[450px] lg-md:max-w-[300px] md:max-w-[330px] invert dark:invert-0 max-md:hidden"
       />
     </div>
   );
@@ -146,7 +140,7 @@ function ArchitectureImage() {
 
 function Why() {
   return (
-    <div className="grid grid-cols-1 border-r grid-cols-2 md:grid-cols-4 bg-fd-card/30">
+    <div className="grid grid-cols-1 border-r sm:grid-cols-2 md:grid-cols-4 bg-fd-card/30">
       <div className="col-span-full flex flex-row items-start justify-center border-l border-t p-8 pb-4 text-center">
         <h2 className="bg-fd-primary text-fd-primary-foreground px-1 text-2xl font-semibold">
           Why CIMFlow?
@@ -207,8 +201,8 @@ function Documentation() {
       <h2 className="mb-8 text-center text-2xl font-semibold">Documentation and Tutorials</h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
         <Link
-          href="/docs"
-          className="group rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
+          href="/docs/Framework"
+          className="group flex flex-col rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
         >
           <div className="mb-4 flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-fd-primary/10 dark:bg-fd-primary/20">
@@ -216,31 +210,31 @@ function Documentation() {
             </div>
             <h3 className="text-lg font-semibold">Getting Started Guide</h3>
           </div>
-          <p className="text-fd-muted-foreground mb-4">Learn the basics of CIMFlow and set up your develop environment.</p>
+          <p className="text-fd-muted-foreground mb-4 flex-1">Learn the basics of CIMFlow and set up your develop environment.</p>
           <div className="mt-auto pt-2 flex items-center text-fd-primary border-t">
             <span className="text-sm font-medium">Learn more</span>
             <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
         <Link
-          href="#"
-          className="group rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
+          href="/docs/Compiler"
+          className="group flex flex-col rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
         >
           <div className="mb-4 flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-fd-primary/10 dark:bg-fd-primary/20">
               <CodeIcon className="size-5 text-fd-primary" />
             </div>
-            <h3 className="text-lg font-semibold">API Reference</h3>
+            <h3 className="text-lg font-semibold">Compiler</h3>
           </div>
-          <p className="text-fd-muted-foreground mb-4">Detailed documentation of CIMFlow&apos;s APIs and components.</p>
+          <p className="text-fd-muted-foreground mb-4 flex-1">MLIR-based compiler toolchain for CIM accelerators.</p>
           <div className="mt-auto pt-2 flex items-center text-fd-primary border-t">
             <span className="text-sm font-medium">Learn more</span>
             <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
         <Link
-          href="#"
-          className="group rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
+          href="/docs/Abstraction/ISA"
+          className="group flex flex-col rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
         >
           <div className="mb-4 flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-fd-primary/10 dark:bg-fd-primary/20">
@@ -248,15 +242,15 @@ function Documentation() {
             </div>
             <h3 className="text-lg font-semibold">Architecture Guide</h3>
           </div>
-          <p className="text-fd-muted-foreground mb-4">Understand CIMFlow&apos;s architecture abstraction and ISA design.</p>
+          <p className="text-fd-muted-foreground mb-4 flex-1">Understand CIMFlow&apos;s architecture abstraction and ISA design.</p>
           <div className="mt-auto pt-2 flex items-center text-fd-primary border-t">
             <span className="text-sm font-medium">Learn more</span>
             <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
         <Link
-          href="#"
-          className="group rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
+          href="/docs/Examples"
+          className="group flex flex-col rounded-lg border bg-gradient-to-b from-fd-card to-fd-card/95 p-6 shadow-md transition-all duration-300 hover:shadow-lg card-hover"
         >
           <div className="mb-4 flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-fd-primary/10 dark:bg-fd-primary/20">
@@ -264,7 +258,7 @@ function Documentation() {
             </div>
             <h3 className="text-lg font-semibold">Examples & Tutorials</h3>
           </div>
-          <p className="text-fd-muted-foreground mb-4">Step-by-step tutorials and example projects for implementation.</p>
+          <p className="text-fd-muted-foreground mb-4 flex-1">Step-by-step tutorials and example projects for implementation.</p>
           <div className="mt-auto pt-2 flex items-center text-fd-primary border-t">
             <span className="text-sm font-medium">Learn more</span>
             <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -299,7 +293,9 @@ function Publications() {
             </p>
             <div className="flex flex-row gap-4 border-t pt-4">
               <Link
-                href="#"
+                href="https://arxiv.org/abs/2505.01107"
+                target="_blank"
+                rel="noopener noreferrer"
                 className={cn(
                   buttonVariants({
                     className: 'group'
@@ -309,17 +305,6 @@ function Publications() {
                 Read Paper
                 <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
-              {/* <Link
-                href="#"
-                className={cn(
-                  buttonVariants({
-                    className: 'group'
-                  })
-                )}
-              >
-                View Presentation
-                <ChevronRightIcon className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link> */}
             </div>
           </div>
         </div>
@@ -333,7 +318,7 @@ function Footer() {
     <footer className="border-x border-t border-b px-8 py-12 bg-gradient-to-b from-fd-card to-fd-card/95">
       <div className="mx-auto max-w-[1100px]">
         <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 md:gap-12">
-          <div className="max-md:hidden"> 
+          <div className="max-md:hidden">
             <div className="flex items-center gap-3 mb-4">
               <Image
                 src={logoImagePath}
@@ -347,24 +332,29 @@ function Footer() {
 
           {/* Section 2: Documentation */}
           <div>
-              <h3 className="mb-4 font-semibold">Documentation</h3>
-              <ul className="space-y-2 text-sm text-fd-muted-foreground">
+            <h3 className="mb-4 font-semibold">Documentation</h3>
+            <ul className="space-y-2 text-sm text-fd-muted-foreground">
               <li>
-                <Link href="/docs" className="hover:text-fd-foreground transition-colors">
-                Getting Started
+                <Link href="/docs/Framework" className="hover:text-fd-foreground transition-colors">
+                  Getting Started
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-fd-foreground transition-colors">
-                API Reference
+                <Link href="/docs/Abstraction/ISA" className="hover:text-fd-foreground transition-colors">
+                  ISA Reference
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-fd-foreground transition-colors">
-                Architecture Guide
+                <Link href="/docs/Compiler" className="hover:text-fd-foreground transition-colors">
+                  Compiler
                 </Link>
               </li>
-              </ul>
+              <li>
+                <Link href="/docs/Simulator" className="hover:text-fd-foreground transition-colors">
+                  Simulator
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Section 3: Community */}
@@ -377,7 +367,7 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-fd-foreground transition-colors">
+                <Link href="https://github.com/BUAA-CI-LAB/CIMFlow/blob/main/CONTRIBUTING.md" className="hover:text-fd-foreground transition-colors" target="_blank" rel="noopener noreferrer">
                   Contributing
                 </Link>
               </li>

@@ -17,4 +17,4 @@ CIMFlow provides:
 
 ## Built With
 
-- [Fumadocs](https://fumadocs.vercel.app) – Modern, lightweight documentation framework.
+- [Fumadocs](https://www.fumadocs.dev/) – Modern, lightweight documentation framework.

@@ -1,0 +1,126 @@
+---
+title: Hardware Abstractions
+description: CIMFlow's three-level hardware abstraction hierarchy for SRAM-based Compute-in-Memory architectures
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+CIMFlow organizes CIM accelerator hardware into three abstraction levels: **Chip**, **Core**, and **Unit**. Each level corresponds to stages in the compilation and simulation pipeline.
+
+---
+
+## Chip Level
+
+The chip level describes the top-level organization of a multi-core CIM accelerator, including how cores communicate and share resources.
+
+<div className="not-prose my-6">
+  <figure>
+    <img
+      src="/images/Chip_Level.png"
+      alt="CIMFlow Chip-Level Architecture"
+      className="w-full h-auto dark:invert"
+    />
+    <figcaption className="mt-2 text-sm text-fd-muted-foreground text-center">Chip-level topology showing NoC interconnect and core grid.</figcaption>
+  </figure>
+</div>
+
+### Network-on-Chip (NoC)
+
+Cores and shared resources connect through an on-chip network, such as a 2D mesh. The NoC handles data exchange between cores and provides access to global shared memory.
+
+### Global Memory
+
+A shared memory stores neural network weights, feature maps, activations, and intermediate results accessible by all cores.
+
+<Callout type="info">
+**Synchronous Inter-Core Communication**: Transfers between cores are blocking. A core waits until the transfer completes before continuing execution.
+</Callout>
+
+---
+
+## Core Level
+
+Each core has its own compute units, local memory, and register files.
+
+### Components
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <span className="font-semibold text-fd-primary">Instruction Memory</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Stores the program executed by this core</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <span className="font-semibold text-fd-primary">Compute Units</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">CIM, Vector, and Scalar processing elements</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <span className="font-semibold text-fd-primary">Register Files</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">32 general-purpose and 32 special-purpose registers</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <span className="font-semibold text-fd-primary">Local Memory</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Segmented storage for layer inputs and outputs</div>
+  </div>
+</div>
+
+### Memory
+
+Global and local memories share a unified address space. Local memory uses a segmented layout with dedicated regions for input and output data.
+
+### Registers
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">GRF</code>
+      <span className="text-xs text-fd-muted-foreground">General</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">32 registers (r0-r31) for address calculation, loop counters, and arithmetic</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-baseline gap-2 mb-2">
+      <code className="font-mono font-semibold text-fd-primary">SRF</code>
+      <span className="text-xs text-fd-muted-foreground">Special</span>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">32 registers for CIM configuration, vector parameters, and sync state</div>
+  </div>
+</div>
+
+---
+
+## Unit Level
+
+Each core contains three types of compute units:
+
+### CIM Compute Unit
+
+The CIM unit performs matrix-vector multiplication (MVM) in SRAM arrays. It contains **K** macro groups, each with **T** macros (both are architecture parameters).
+
+<div className="not-prose my-6 max-w-lg mx-auto">
+  <figure>
+    <img
+      src="/images/Macro.png"
+      alt="CIM Macro Group Structure"
+      className="w-full h-auto dark:invert"
+    />
+    <figcaption className="mt-2 text-sm text-fd-muted-foreground text-center">Macro group structure with T macros sharing input data.</figcaption>
+  </figure>
+</div>
+
+Each macro group operates independently for data parallelism. Macros within a group share input data but store different weights, organized along the output channel dimension.
+
+### Vector Compute Unit
+
+The vector unit handles element-wise operations after MVM: quantization, activation functions (ReLU, Sigmoid, Tanh), partial sum accumulation, residual addition, and pooling.
+
+### Scalar Compute Unit
+
+The scalar unit handles control flow and address generation: computing load/store addresses, conditional and unconditional branches, loop counters, and barrier-based synchronization for multi-core coordination.

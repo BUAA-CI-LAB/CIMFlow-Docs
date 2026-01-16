@@ -1,0 +1,7 @@
+{
+    "title": "Simulator",
+    "description": "Cycle-accurate simulation",
+    "icon": "Play",
+    "root": true,
+    "pages": ["index"]
+}

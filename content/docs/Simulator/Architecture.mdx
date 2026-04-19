@@ -1,0 +1,187 @@
+---
+title: Architecture
+description: Static module composition and source-map of CIMFlow-Simulator
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Cpu, Network, HardDrive, Radio, Calculator, Sliders, ArrowLeftRight } from 'lucide-react';
+
+The simulator runtime is organized in three levels: `Chip → Core → Units`.
+This page focuses on static composition and ownership boundaries.
+
+## Chip Level and Core Level
+
+The two outermost levels define the overall simulation topology.
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Chip</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">One global clock, N cores, global memory, and network</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <HardDrive className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Core</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Decoder, registers, local memory, switch, and execute units</div>
+  </div>
+</div>
+
+At chip construction, each core receives its instruction stream and connects its local switch to the shared network. The global memory switch is also bound to the same network.
+
+Each `Core` contains the following subcomponents:
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 lg:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Decoder</div>
+    <div className="text-sm text-fd-muted-foreground">Instruction fetch, decode, and issue</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">RegUnit</div>
+    <div className="text-sm text-fd-muted-foreground">Register file access (GRF and SRF)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">MemoryUnit</div>
+    <div className="text-sm text-fd-muted-foreground">Local memory backends (RAM, RegBuffer)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Switch</div>
+    <div className="text-sm text-fd-muted-foreground">Local endpoint for NoC communication</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Execute Units</div>
+    <div className="text-sm text-fd-muted-foreground">Scalar, SIMD, Reduce, Transfer, CIM Compute, CIM Control</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">CimUnit</div>
+    <div className="text-sm text-fd-muted-foreground">CIM macro array mapped into local memory</div>
+  </div>
+</div>
+
+---
+
+## Execute Units
+
+Each core contains six specialized execute units:
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Calculator className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">CimComputeUnit</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Matrix-vector multiply over CIM macro groups</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Sliders className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">CimControlUnit</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Activation mask and output-side CIM control</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">SIMDUnit</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Vector operations via configurable functor pipelines</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Radio className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">ReduceUnit</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Aggregation operations (max, sum) across vectors</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Calculator className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">ScalarUnit</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Scalar arithmetic, load/store, and register updates</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <ArrowLeftRight className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">TransferUnit</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Local/global memory transfers, inter-core communication, sync</div>
+  </div>
+</div>
+
+<Callout type="info" title="Control Path Split">
+Branch and jump targets are resolved in the decoder. `TAG`/`WAIT` are decoded as control opcodes but executed by `TransferUnit`.
+</Callout>
+
+---
+
+## Source Directory Map
+
+The tree below shows the source directory layout of the CIMFlow-Simulator C++ codebase. Each directory corresponds to a major subsystem documented in this section.
+
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="simulator">
+      <File name="cim_simulator.cpp" />
+      <File name="cim_arguments.h" />
+    </Folder>
+    <Folder name="chip">
+      <File name="chip.h" />
+      <File name="chip.cpp" />
+    </Folder>
+    <Folder name="core" defaultOpen>
+      <Folder name="decoder">
+        <File name="decoder.h" />
+        <File name="ins_decoder.cpp" />
+      </Folder>
+      <Folder name="conflict">
+        <File name="conflict_handler.h" />
+      </Folder>
+      <Folder name="execute_unit">
+        <File name="scalar_unit.h" />
+        <File name="simd_unit.h" />
+        <File name="reduce_unit.h" />
+        <File name="transfer_unit.h" />
+        <File name="cim_compute_unit.h" />
+        <File name="cim_control_unit.h" />
+      </Folder>
+      <Folder name="cim_unit">
+        <File name="cim_unit.h" />
+        <File name="macro_group.h" />
+      </Folder>
+      <Folder name="socket">
+        <File name="switch.h" />
+      </Folder>
+      <File name="core.h" />
+      <File name="core.cpp" />
+    </Folder>
+    <Folder name="memory">
+      <File name="ram.h" />
+      <File name="reg_buffer.h" />
+      <File name="memory_unit.h" />
+    </Folder>
+    <Folder name="network">
+      <File name="network.h" />
+      <File name="network_config.h" />
+    </Folder>
+    <Folder name="config">
+      <File name="config.h" />
+      <File name="chip_config.h" />
+      <File name="core_config.h" />
+    </Folder>
+    <Folder name="address_space">
+      <File name="address_space.h" />
+    </Folder>
+    <Folder name="util">
+      <File name="reporter.h" />
+      <File name="energy_counter.h" />
+    </Folder>
+    <Folder name="base_component">
+      <File name="base_module.h" />
+    </Folder>
+  </Folder>
+</Files>

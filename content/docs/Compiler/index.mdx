@@ -1,8 +1,112 @@
 ---
 title: Compiler
-description: MLIR-based compiler for CIM accelerators
+description: Two-level compiler stack from ONNX graph partitioning to CIM ISA generation
 ---
 
-Documentation for the CIMFlow compiler is coming soon.
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Workflow, GitBranch, Cpu, Wrench, Settings, Terminal, Github } from 'lucide-react';
 
-The compiler provides an MLIR-based toolchain for compiling DNN models to CIM-executable code.
+<div className="not-prose flex items-center gap-2 mb-6">
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Compiler/releases" target="_blank" rel="noopener noreferrer" className="inline-block">
+    <img
+      src="https://img.shields.io/github/v/release/BUAA-CI-LAB/CIMFlow-Compiler?include_prereleases&style=flat-square&label=version"
+      alt="GitHub Release"
+      className="h-5"
+    />
+  </a>
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Compiler" target="_blank" rel="noopener noreferrer" className="inline-block">
+    <img
+      src="https://img.shields.io/github/stars/BUAA-CI-LAB/CIMFlow-Compiler?style=flat-square&color=yellow"
+      alt="GitHub Stars"
+      className="h-5"
+    />
+  </a>
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Compiler" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-fd-muted-foreground hover:text-fd-foreground transition-colors">
+    <Github className="size-4" />
+    <span>View on GitHub</span>
+  </a>
+</div>
+
+The Compiler section documents `CIMFlow-Compiler`, the compiler that converts ONNX neural network models into ISA instruction streams for the CIMFlow simulator.
+
+## Scope
+
+This section covers:
+
+- Two-level compilation flow (CG-level graph partitioning and OP-level ISA generation)
+- MLIR-based DSL backend for operator kernel code generation
+- Configuration formats and hardware parameter constraints
+- Command-line reference for `cim-compiler` commands
+
+<Callout type="info" title="Boundary with Framework and Simulator">
+This section focuses on compiler internals and interfaces. End-to-end workflow usage is documented in [Framework](/docs/Framework), and runtime execution semantics are documented in [Simulator](/docs/Simulator).
+</Callout>
+
+---
+
+## Page Map
+
+<Cards>
+  <Card icon={<Terminal className="text-cyan-400" />} title="Run and CLI" href="/docs/Compiler/CLI-Reference">
+    `cim-compiler` commands, options, and advanced developer tools.
+  </Card>
+  <Card icon={<Workflow className="text-blue-400" />} title="Pipeline Overview" href="/docs/Compiler/Pipeline-Overview">
+    End-to-end compilation stages and output file formats.
+  </Card>
+  <Card icon={<GitBranch className="text-purple-400" />} title="CG-Level" href="/docs/Compiler/CG-Level">
+    Graph partitioning, stage formation, and CG instruction generation.
+  </Card>
+  <Card icon={<Cpu className="text-emerald-400" />} title="OP-Level" href="/docs/Compiler/OP-Level">
+    Lower CG instructions to ISA with synchronization and per-core emission.
+  </Card>
+  <Card icon={<Wrench className="text-amber-400" />} title="DSL and MLIR Backend" href="/docs/Compiler/DSL-and-MLIR-Backend">
+    DSL frontend, AST-to-MLIR lowering, pass pipeline, and code generation.
+  </Card>
+  <Card icon={<Settings className="text-rose-400" />} title="Configuration and Constraints" href="/docs/Compiler/Configuration-and-Constraints">
+    Config formats, parameter checks, and compatibility rules.
+  </Card>
+</Cards>
+
+---
+
+## Code Coverage Map
+
+The tree below shows the source directory layout of the CIMFlow-Compiler Python package.
+
+<Files>
+  <Folder name="src/cim_compiler" defaultOpen>
+    <Folder name="cli">
+      <File name="Argument parsing, command dispatch, log level setup" />
+      <Folder name="commands">
+        <File name="network, cg-level, op-level, compile, convert, show" />
+      </Folder>
+    </Folder>
+    <Folder name="cg">
+      <File name="ONNX parsing, dependency analysis, stage partitioning, core allocation" />
+    </Folder>
+    <Folder name="poly">
+      <File name="OP-level lowering, operator scheduling, memory allocation, ISA assembly" />
+    </Folder>
+    <Folder name="op_lib">
+      <File name="Operator kernel templates (conv, depthwise conv, pooling)" />
+    </Folder>
+    <Folder name="runner">
+      <File name="Kernel compilation driver, invokes DSL/MLIR backend" />
+    </Folder>
+    <Folder name="precompile">
+      <File name="DSL preprocessing: comment removal, macro expansion" />
+    </Folder>
+    <Folder name="java">
+      <File name="ANTLR-based DSL parser and AST generation" />
+    </Folder>
+    <Folder name="csrc">
+      <File name="MLIR backend: pass pipeline, dialect lowering, ISA code emission" />
+    </Folder>
+    <Folder name="utils">
+      <File name="Config parsing, T/B validation, memory layout checks, visualization" />
+    </Folder>
+  </Folder>
+</Files>
+

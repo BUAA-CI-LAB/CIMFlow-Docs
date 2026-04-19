@@ -1,7 +1,18 @@
 {
-    "title": "Simulator",
-    "description": "Cycle-accurate simulation",
-    "icon": "Play",
-    "root": true,
-    "pages": ["index"]
+  "title": "Simulator",
+  "description": "SystemC runtime and analysis reference",
+  "icon": "Play",
+  "root": true,
+  "pages": [
+    "index",
+    "---Usage---",
+    "Run-and-CLI",
+    "---Internals---",
+    "Architecture",
+    "Execution-Model",
+    "Memory-Network-Transfer",
+    "---Inputs and Outputs---",
+    "Input-Files",
+    "Output-and-Metrics"
+  ]
 }

@@ -1,0 +1,155 @@
+---
+title: Run and CLI
+description: Commands, options, output formats, and return codes
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Terminal, Cpu } from 'lucide-react';
+
+The simulator can be invoked through `cimflow sim` for standard workflows or the `cim-simulator` native binary for advanced use.
+
+## Which Command to Use
+
+The simulator can be invoked through the CIMFlow CLI or directly as a native binary.
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Terminal className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">cimflow sim</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Standard CIMFlow workflow with automatic config resolution</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">cim-simulator</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Native binary for advanced output control and debugging</div>
+  </div>
+</div>
+
+---
+
+## CIMFlow Sim Command
+
+```bash
+cimflow sim -i <inst-file> -o <output-dir> [options]
+```
+
+<Accordions>
+<Accordion title="Options">
+
+| Option | Description |
+| --- | --- |
+| `-i, --inst-file` | Instruction file path (required) |
+| `-o, --output-dir` | Simulation output directory (required) |
+| `-cf, --config` | Explicit hardware config file |
+| `-cd, --config-dir` | Config directory override used with auto-resolution |
+| `-t, --mg-size` | Macro group size, used with `-b` to auto-select hardware config file (pattern: `config-mg{T}-b{B}.json`) when `--config` is not provided |
+| `-b, --bandwidth` | NoC bandwidth (flit size), used with `-t` for auto-selection |
+| `--simulator-bin` | Path to the `cim-simulator` executable |
+| `--paths-cfg` | Path to `tool_paths.json` (overrides default config lookup; see [Framework Configuration](/docs/Framework/configuration)) |
+| `-l, --log-level` | One of `TRACE`, `DEBUG`, `VERBOSE`, `INFO`, `WARNING`, `ERROR` |
+
+</Accordion>
+</Accordions>
+
+### Config Resolution
+
+`cimflow sim` resolves the hardware config file in this order:
+
+1. Explicit `--config`
+2. `--config-dir` + `-t/-b`
+3. `tool_paths.json` config directory + `-t/-b`
+
+<Callout type="info" title="Output Behavior">
+The report file is generated as `simulation_<inst_stem>.txt` under `--output-dir`. Native options like `--format`, `-j`, `--list-cores`, and `--verbose` are not exposed by `cimflow sim` — use the native binary for those.
+</Callout>
+
+---
+
+## Native Binary
+
+```bash
+cim-simulator <config> <inst> [options]
+```
+
+- `<config>`: Hardware/simulation config JSON
+- `<inst>`: Instruction JSON keyed by numeric core IDs (`"0"`, `"1"`, ...)
+
+<Callout type="warn" title="Short Option `-l` Means Different Things">
+In `cimflow sim`, `-l` is log level.
+In `cim-simulator`, `-l` means `--list-cores` (per-core energy report).
+</Callout>
+
+<Accordions>
+<Accordion title="Native Options">
+
+| Option | Description |
+| --- | --- |
+| `-o, --output <file>` | Output path (default: `<inst_stem>_sim_report.txt`) |
+| `--format <mode>` | Primary output format (`text` or `json`, default: `text`) |
+| `-j, --json-output <file>` | Additional JSON report path when using text mode |
+| `-l, --list-cores` | Print per-core energy report block |
+| `-v, --verbose` | Keep zero-energy modules in report tables |
+| `-V, --version` | Print version and exit |
+| `-h, --help` | Print help |
+| `-c, --check` | Reserved for future use (accepted but has no effect) |
+
+</Accordion>
+</Accordions>
+
+---
+
+## Output Behavior
+
+### Text Mode (Default)
+
+```bash
+cim-simulator config.json inst.json -o report.txt -j report.json
+```
+
+- `report.txt`: Human-readable summary
+- `report.json` via `-j`: Machine-readable reporter object
+
+### JSON Mode
+
+```bash
+cim-simulator config.json inst.json --format json -o report.json
+```
+
+In JSON mode, `-o` is treated as the report JSON path. Text report body is not emitted.
+
+---
+
+## Path Resolution Rules
+
+### Config-Embedded Paths
+
+Paths inside `<config>` are resolved relative to the config file directory:
+
+- `network_config.network_config_file_path`
+- Local/global memory image file paths
+
+<Accordions>
+<Accordion title="Return Codes">
+
+Return codes from `cim-simulator` indicate the simulation outcome.
+
+| Code | Name | Meaning |
+| --- | --- | --- |
+| `0` | `SIM_SUCCESS` | Run completed successfully |
+| `1` | `SIM_FAILURE` | Generic failure |
+| `2` | `INVALID_USAGE` | Invalid CLI arguments |
+| `3` | `INVALID_CONFIG` | Invalid or inconsistent config |
+| `4` | `CHECK_INS_STAT_FAILED` | Reserved legacy check code |
+| `5` | `CHECK_REG_FAILED` | Reserved legacy check code |
+| `6` | — | Reserved |
+| `7` | `NETWORK_CONFIG_NOT_FOUND` | Missing network latency/energy file |
+| `8` | `INVALID_FORMAT_ARGUMENT` | Invalid `--format` value |
+| `9` | `INVALID_INSTRUCTION_FILE` | Invalid instruction file structure/content |
+
+</Accordion>
+</Accordions>

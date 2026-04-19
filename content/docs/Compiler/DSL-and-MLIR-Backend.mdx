@@ -1,0 +1,119 @@
+---
+title: DSL and MLIR Backend
+description: CIM-DSL frontend, AST to MLIR lowering, and pass-based ISA code generation
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+
+The low-level backend is invoked via the `cim-compiler compile` command. It is used directly for DSL programs and indirectly during OP-level kernel generation.
+
+## Entry Command
+
+```bash
+cim-compiler compile \
+  --input-file code.cim \
+  --output-dir build/out \
+  --config-file config.json
+```
+
+---
+
+## Compilation Flow
+
+The `compile` command performs the following pipeline:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Preprocess DSL Source [!toc]
+Remove comments and expand macros from the `.cim` source file
+
+#### Parse to AST [!toc]
+Invoke ANTLR-based parser to produce `ast.json`
+
+#### Lower to MLIR [!toc]
+Convert AST JSON into an MLIR module
+
+#### Run Pass Pipeline and Emit ISA [!toc]
+Execute optimization passes and emit `final_code.json`
+
+</div>
+
+Generated output files:
+
+<Files>
+  <Folder name="build/out" defaultOpen>
+    <File name="origin_code.cim" />
+    <File name="precompile.cim" />
+    <File name="ast.json" />
+    <File name="final_code.json" />
+  </Folder>
+</Files>
+
+| File | Description |
+| --- | --- |
+| `origin_code.cim` | Original DSL source |
+| `precompile.cim` | Source after comment removal and macro expansion |
+| `ast.json` | Abstract syntax tree from ANTLR parser |
+| `final_code.json` | Generated ISA instructions |
+
+---
+
+## DSL Grammar Coverage
+
+The DSL grammar supports:
+
+- Function definitions with typed parameters
+- Assignments, calls, `for` loops (with `carry`), `if/else`
+- Slicing, scalar/vector expressions, and built-ins
+- Memory/type literals required by CIM backend
+
+See [Domain Specific Language](/docs/Abstraction/DSL) for user-facing syntax.
+
+---
+
+## MLIR Pass Pipeline
+
+The backend runs a series of MLIR optimization passes to lower the DSL program into ISA instructions. The passes handle function inlining, loop unrolling, CIM-specific dialect lowering, register allocation, and final code emission. The output is always `final_code.json` regardless of the internal pass ordering.
+
+For background on the MLIR framework and pass infrastructure, see the official documentation at [mlir.llvm.org/docs](https://mlir.llvm.org/docs/).
+
+<Accordions>
+<Accordion title="Pass Pipeline Details">
+
+The five pass groups run in sequence:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Init Passes [!toc]
+Inlining, canonicalization, symbol cleanup, function-level CSE, alias folding, affine lowering, and memory address allocation
+
+#### Lower Passes [!toc]
+CIM dialect lowering, canonical optimizations, and common subexpression exposure
+
+#### Unroll Passes [!toc]
+Loop unrolling and cleanup/canonicalization
+
+#### RR2RI/CF Passes [!toc]
+Register-form rewriting, SCF-to-CF conversion, branch lowering, and offset/constant optimizations
+
+#### CodeGen Pass [!toc]
+Emit final ISA JSON (`final_code.json`)
+
+</div>
+
+<Callout type="info" title="Binary Resolution">
+`compile` resolves MLIR backend binary from `CIM_MLIR_COMPILER_BIN` if set; otherwise it uses the default project build output (`build/bin/main`).
+</Callout>
+
+</Accordion>
+</Accordions>
+
+---
+
+## Relationship with OP-Level
+
+During OP-level compilation, certain operators — particularly depthwise convolution and fallback convolution paths — need custom ISA code beyond basic lowering rules. In these cases, OP-level invokes this same DSL-to-ISA pipeline to compile the kernel. The resulting instruction blocks are then inserted into the global per-core ISA file alongside the instructions produced by direct lowering.
+
+This invocation is transparent: users do not provide DSL source to OP-level. The kernel templates are generated internally, compiled through the pass pipeline above, and merged into the final output.

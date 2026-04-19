@@ -1,0 +1,89 @@
+---
+title: Output and Metrics
+description: Output report formats and performance metric definitions
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+CIMFlow-Simulator produces performance reports after each simulation run in text or JSON format.
+
+## Output Model
+
+After simulation completes, the simulator produces a performance report. The report format depends on the output mode selected at the command line.
+
+<Tabs items={['Text Report', 'JSON Report']}>
+<Tab value="Text Report">
+
+Text mode is the default for both `cimflow sim` and the native `cim-simulator` binary. The text report contains the following sections:
+
+| Section | Content |
+| --- | --- |
+| Run metadata | Config path, instruction path, simulation/data mode |
+| Performance metrics | Latency, energy, power, TOPS, TOPS/W |
+| Energy breakdown | Hierarchical energy table by module |
+| Per-core detail | Optional per-core energy table (enabled with `-l`) |
+
+```bash
+cim-simulator config.json inst.json -o report.txt
+```
+
+To also produce a JSON report alongside the text output, add the `-j` flag:
+
+```bash
+cim-simulator config.json inst.json -o report.txt -j report.json
+```
+
+</Tab>
+<Tab value="JSON Report">
+
+JSON mode outputs a machine-readable report containing all `Reporter` fields. Enable it with the `--format json` flag:
+
+```bash
+cim-simulator config.json inst.json --format json -o report.json
+```
+
+In JSON mode, `-o` is treated as the JSON report path and no text report is emitted. The JSON output includes the following top-level fields:
+
+| Field | Description |
+| --- | --- |
+| `latency_` | Simulated execution time |
+| `average_power_` | Computed as `total_energy / latency` |
+| `total_energy_` | Static energy plus dynamic energy |
+| `TOPS_` | Tera-operations per second (requires `op_count_`) |
+| `TOPS_per_W_` | TOPS divided by average power (requires `op_count_`) |
+| `op_count_` | Operation count from instruction metadata |
+| `exec_time_` | Wall-clock simulation time |
+| `energy_reporter_` | Hierarchical energy breakdown tree |
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="Field Name Convention">
+JSON field names use trailing underscores (e.g., `latency_`, `total_energy_`) to match the internal C++ member naming convention in the `Reporter` class.
+</Callout>
+
+---
+
+## Metric Definitions
+
+The simulator reports the following performance metrics after each run.
+
+| Metric | Definition |
+| --- | --- |
+| Latency | Simulated execution time in the model timeline |
+| Total Energy | Static energy plus dynamic energy |
+| Average Power | `total_energy / latency` |
+| TOPS | `op_count / latency` scaled to tera-operations per second |
+| TOPS/W | `TOPS / average_power` |
+
+The `op_count` value comes from the `metadata.op_count` field in the instruction file. This field records the total number of high-level operations (e.g., multiply-accumulate) in the workload, as computed by the compiler.
+
+<Callout type="warn" title="TOPS and TOPS/W Require op_count">
+When `metadata.op_count` is absent or zero, the simulator cannot compute TOPS or TOPS/W. These fields are omitted from the report.
+</Callout>
+
+<Callout type="info" title="Static vs Dynamic Energy">
+Static energy depends on configured static power and final runtime.
+Dynamic energy is accumulated by activity events in compute, memory, and network modules.
+</Callout>

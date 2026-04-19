@@ -146,3 +146,15 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Flatten the sidebar footer controls (GitHub link + theme toggle).
+   fumadocs-ui 16.7.16 wraps them in a bordered pill and adds a leading
+   separator on the theme toggle; we prefer the previous borderless look. */
+#nd-sidebar div:has(> a[aria-label="GitHub"]) {
+  border-width: 0;
+  background-color: transparent;
+}
+
+#nd-sidebar div:has(> a[aria-label="GitHub"]) > button[aria-label="Toggle Theme"] {
+  border-width: 0;
+}
+

@@ -1,8 +1,123 @@
 ---
 title: Simulator
-description: SystemC-based cycle-accurate simulator for CIM architectures
+description: Runtime model, configuration, and analysis workflow for CIMFlow-Simulator
 ---
 
-Documentation for the CIMFlow simulator is coming soon.
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Terminal, Settings, Cpu, Workflow, ChartColumn, Play, Github } from 'lucide-react';
 
-The simulator provides a SystemC-based cycle-accurate simulation environment for CIM architectures.
+<div className="not-prose flex items-center gap-2 mb-6">
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Simulator/releases" target="_blank" rel="noopener noreferrer" className="inline-block">
+    <img
+      src="https://img.shields.io/github/v/release/BUAA-CI-LAB/CIMFlow-Simulator?include_prereleases&style=flat-square&label=version"
+      alt="GitHub Release"
+      className="h-5"
+    />
+  </a>
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Simulator" target="_blank" rel="noopener noreferrer" className="inline-block">
+    <img
+      src="https://img.shields.io/github/stars/BUAA-CI-LAB/CIMFlow-Simulator?style=flat-square&color=yellow"
+      alt="GitHub Stars"
+      className="h-5"
+    />
+  </a>
+  <a href="https://github.com/BUAA-CI-LAB/CIMFlow-Simulator" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-fd-muted-foreground hover:text-fd-foreground transition-colors">
+    <Github className="size-4" />
+    <span>View on GitHub</span>
+  </a>
+</div>
+
+The Simulator section documents `CIMFlow-Simulator`, the SystemC-based cycle-accurate simulator that executes ISA instruction streams produced by the CIMFlow compiler and produces cycle/energy reports.
+
+## Scope
+
+This section covers:
+
+- Cycle-level execution model (`Chip → Core → Units` hierarchy)
+- Memory hierarchy, NoC transfer, and synchronization semantics
+- Input file formats and validation rules
+- CLI interfaces and output metrics
+
+<Callout type="info" title="Boundary with Other Sections">
+For ISA definitions see [Abstraction](/docs/Abstraction), for compilation see [Compiler](/docs/Compiler), for end-to-end workflow see [Framework](/docs/Framework).
+</Callout>
+
+---
+
+## Page Map
+
+<Cards>
+  <Card icon={<Terminal className="text-cyan-400" />} title="Run and CLI" href="/docs/Simulator/Run-and-CLI">
+    `cimflow sim` and native `cim-simulator` commands, options, and return codes.
+  </Card>
+  <Card icon={<Cpu className="text-emerald-400" />} title="Architecture" href="/docs/Simulator/Architecture">
+    Chip/Core/Unit composition and module boundaries.
+  </Card>
+  <Card icon={<Workflow className="text-blue-400" />} title="Execution and Resource Model" href="/docs/Simulator/Execution-Model">
+    Decode-issue lifecycle, conflicts, and control semantics.
+  </Card>
+  <Card icon={<Play className="text-purple-400" />} title="Memory, Network and Transfer" href="/docs/Simulator/Memory-Network-Transfer">
+    Address-space mapping, transfer paths, and NoC cost model.
+  </Card>
+  <Card icon={<Settings className="text-rose-400" />} title="Input Files" href="/docs/Simulator/Input-Files">
+    Required JSON structures and validation rules.
+  </Card>
+  <Card icon={<ChartColumn className="text-amber-400" />} title="Output and Metrics" href="/docs/Simulator/Output-and-Metrics">
+    Output formats and performance metric definitions.
+  </Card>
+</Cards>
+
+---
+
+## Code Coverage Map
+
+The tree below shows the source directory layout of the CIMFlow-Simulator C++ codebase. For a detailed file-level view, see [Architecture / Source Directory Map](/docs/Simulator/Architecture#source-directory-map).
+
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="simulator">
+      <File name="CLI entry point, argument parsing, report output" />
+    </Folder>
+    <Folder name="chip">
+      <File name="Top-level chip assembly, global clock, core instantiation" />
+    </Folder>
+    <Folder name="core" defaultOpen>
+      <Folder name="decoder">
+        <File name="Opcode decoding, conflict metadata generation" />
+      </Folder>
+      <Folder name="conflict">
+        <File name="Per-unit resource conflict checks and stall logic" />
+      </Folder>
+      <Folder name="execute_unit">
+        <File name="ScalarUnit, SIMDUnit, ReduceUnit, TransferUnit, CimComputeUnit, CimControlUnit" />
+      </Folder>
+      <Folder name="cim_unit">
+        <File name="CIM macro array model and macro group configuration" />
+      </Folder>
+      <Folder name="socket">
+        <File name="Local switch endpoint for NoC communication" />
+      </Folder>
+    </Folder>
+    <Folder name="memory">
+      <File name="RAM, RegBuffer, global memory, address-space mapping" />
+    </Folder>
+    <Folder name="network">
+      <File name="NoC latency/energy matrix, flit-level transfer simulation" />
+    </Folder>
+    <Folder name="config">
+      <File name="JSON config parsing, schema validation, parameter checks" />
+    </Folder>
+    <Folder name="address_space">
+      <File name="Memory region definitions and address-to-ID resolution" />
+    </Folder>
+    <Folder name="util">
+      <File name="Energy reporter, timing statistics, report formatting" />
+    </Folder>
+    <Folder name="base_component">
+      <File name="Shared base classes for energy and timing accounting" />
+    </Folder>
+  </Folder>
+</Files>
+

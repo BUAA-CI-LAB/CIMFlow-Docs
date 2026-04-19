@@ -1,0 +1,171 @@
+---
+title: Input Files
+description: Configuration, instruction, and network file formats and validation rules
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Settings, Cpu, Network } from 'lucide-react';
+
+The simulator requires three JSON files to run: a hardware configuration that defines the chip architecture, an instruction file with per-core ISA streams, and a network matrix that defines NoC latency and energy costs.
+
+## Input Files Overview
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Settings className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Config</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Defines chip architecture, memory layout, and simulation parameters</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Instructions</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Per-core ISA instruction streams with optional metadata</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Network className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Network</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">NoC latency and energy cost matrix between cores</div>
+  </div>
+</div>
+
+Each file maps to a CLI argument:
+
+| File | CLI Argument | Required | Error on Invalid |
+| --- | --- | --- | --- |
+| Hardware/simulation config | Positional `<config>` | Yes | `INVALID_CONFIG` |
+| Instruction file | Positional `<inst>` | Yes | `INVALID_INSTRUCTION_FILE` |
+| NoC matrix JSON | Referenced inside config | Yes | `NETWORK_CONFIG_NOT_FOUND` |
+
+<Callout type="info" title="Failure Codes">
+Return-code details are listed in [Run and CLI](/docs/Simulator/Run-and-CLI).
+</Callout>
+
+---
+
+## Hardware and Simulation Config
+
+Top-level skeleton:
+
+```json
+{
+  "chip_config": {
+    "core_cnt": 1,
+    "core_config": { "...": "..." },
+    "global_memory_config": { "...": "..." },
+    "network_config": {
+      "bus_width_byte": 16,
+      "network_config_file_path": "./network/flit16dim8.json"
+    },
+    "address_space_config": [
+      { "name": "cim_unit", "size": 1024 }
+    ]
+  },
+  "sim_config": {
+    "period_ns": 1.0,
+    "sim_mode": "run_one_round",
+    "data_mode": "real_data"
+  }
+}
+```
+
+<Accordions>
+<Accordion title="Config Validation Rules">
+
+- `core_cnt` must be at least 1
+- Both `chip_config` and `sim_config` must pass internal validation
+- Local and global memory names must be unique across the entire config
+- Each entry in `address_space_config` must correspond to exactly one memory definition, and vice versa
+- Each local dedicated data path pair must point to valid local (not global) memory entries
+- `sim_mode` must be a recognized value (`run_one_round` or `run_until_time`)
+- `data_mode` must be a recognized value (`real_data` or `no_real_data`)
+- When `sim_mode = run_until_time`, the `sim_time_ms` field must be positive
+
+</Accordion>
+</Accordions>
+
+<Callout type="info" title="Path Resolution">
+All embedded paths — the NoC matrix (`network_config_file_path`), local memory images, and global memory images — are resolved relative to the config file's directory, not the working directory.
+</Callout>
+
+---
+
+## Instruction File
+
+Expected structure is per-core arrays keyed by numeric string core IDs.
+
+```json
+{
+  "metadata": {
+    "op_count": 123456789
+  },
+  "0": [
+    { "opcode": 44, "rd": 1, "imm": 1024 },
+    { "opcode": 48, "rs": 1, "rt": 2, "rd": 3, "imm": 0 }
+  ],
+  "1": [
+    { "opcode": 44, "rd": 4, "imm": 0 }
+  ]
+}
+```
+
+<Accordions>
+<Accordion title="Instruction Validation Rules">
+
+- All non-`metadata` keys must be valid integer core IDs
+- Core IDs must be in `[0, core_cnt)`
+- Core IDs must cover the full range `0..core_cnt-1` with no missing entries
+- Each core entry must be an array
+- The number of core entries must equal `core_cnt`
+- Per-core instruction items must be parseable as `Inst`
+- The `metadata.op_count` field is optional; when present, it enables TOPS and TOPS/W metrics
+
+</Accordion>
+</Accordions>
+
+---
+
+## Network Latency/Energy Matrix
+
+The `network_config_file_path` field points to a matrix file defining NoC costs.
+
+```json
+{
+  "latency": {
+    "0": { "1": 3, "2": 4 },
+    "1": { "0": 3 }
+  },
+  "energy": {
+    "0": { "1": 1.2, "2": 1.6 },
+    "1": { "0": 1.2 }
+  }
+}
+```
+
+- `latency[src][dst]`: Per-flit latency in cycles
+- `energy[src][dst]`: Per-flit dynamic energy in pJ
+- Flit count per transaction: `ceil(data_size / bus_width_byte)`
+
+<Accordions>
+<Accordion title="Network Validation Rules">
+
+- The network matrix file must exist at the configured path
+- Both `latency` and `energy` objects must be present
+- Keys must be valid core ID pairs
+
+</Accordion>
+</Accordions>
+
+<Callout type="warn" title="Pre-Simulation Checklist">
+Before running simulation:
+- Ensure `core_cnt` matches instruction core entries (`0..core_cnt-1`)
+- Verify memory names are unique and address-space mapping is one-to-one
+- Confirm the NoC matrix path exists and is readable
+- Check that memory image files exist when configured
+</Callout>

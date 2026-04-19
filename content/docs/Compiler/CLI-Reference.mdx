@@ -1,0 +1,199 @@
+---
+title: Run and CLI
+description: Command reference for CIMFlow compiler commands and native cim-compiler tools
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Terminal, Cpu } from 'lucide-react';
+
+The compiler can be invoked through `cimflow compile` for standard workflows or the `cim-compiler` native binary for advanced use.
+
+## Which Command to Use
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Terminal className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">cimflow compile</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Standard CIMFlow workflow with automatic config resolution</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">cim-compiler</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Native binary for advanced options, visualization, and developer tools</div>
+  </div>
+</div>
+
+---
+
+## CIMFlow Compile Command
+
+The `cimflow compile` command provides CG-level and OP-level compilation with automatic config resolution.
+
+<Tabs items={['CG-Level', 'OP-Level']}>
+<Tab value="CG-Level">
+
+```bash
+cimflow compile cg \
+  -m model.onnx \
+  -o output/cg \
+  -t 8 -k 16 -b 16 -c 64 \
+  --batch-size 8 --strategy dp
+```
+
+<Accordions>
+<Accordion title="Options">
+
+| Option | Description |
+| --- | --- |
+| `-m, --model-path` | Path to the ONNX model (required) |
+| `-o, --output-dir` | Output directory (required) |
+| `-t, --mg-size` | Macro group size (default: 8) |
+| `-k, --mg-num` | Number of macro groups (default: 16) |
+| `-b, --bandwidth` | NoC bandwidth in flits (default: 16) |
+| `-c, --core-num` | Number of cores (default: 64) |
+| `--batch-size` | Batch size (default: 8) |
+| `--strategy` | Partition strategy (default: `dp`) |
+| `--visualize` | Enable visualization of partition results |
+| `-l, --log-level` | Log level (`TRACE`, `DEBUG`, `VERBOSE`, `INFO`, `WARNING`, `ERROR`) |
+| `--compiler-bin` | Path to `cim-compiler` binary (default: `cim-compiler`) |
+| `--paths-cfg` | Path to `tool_paths.json` (see [Framework Configuration](/docs/Framework/configuration)) |
+
+</Accordion>
+</Accordions>
+
+</Tab>
+<Tab value="OP-Level">
+
+```bash
+cimflow compile op \
+  -i output/cg/instructions_*.json \
+  -o output/op \
+  -cf config.json
+```
+
+<Accordions>
+<Accordion title="Options">
+
+| Option | Description |
+| --- | --- |
+| `-i, --instruction-file` | CG instruction file (required) |
+| `-o, --output-dir` | Output directory (required) |
+| `-cf, --config` | Hardware config file (auto-resolved from T/B if omitted) |
+| `-cd, --config-dir` | Directory containing hardware configs (overrides `tool_paths.json`) |
+| `-t, --mg-size` | Macro group size (required for auto-resolution) |
+| `-b, --bandwidth` | NoC bandwidth (required for auto-resolution) |
+| `--compiler-bin` | Path to `cim-compiler` binary |
+| `--paths-cfg` | Path to `tool_paths.json` |
+| `-l, --log-level` | Log level |
+
+</Accordion>
+</Accordions>
+
+</Tab>
+</Tabs>
+
+---
+
+## Native Binary
+
+The native `cim-compiler` binary provides additional commands and options not exposed through `cimflow compile`.
+
+```bash
+cim-compiler [--log-level LEVEL] COMMAND [OPTIONS]
+```
+
+### Global Options
+
+| Option | Description |
+| --- | --- |
+| `--log-level` | `TRACE`, `DEBUG`, `VERBOSE`, `INFO`, `WARNING`, `ERROR` |
+| `--version`, `-V` | Print compiler version |
+
+### Compilation Commands
+
+These commands appear when you run `cim-compiler --help`.
+
+<Accordions>
+<Accordion title="Network (Full CG + OP Pipeline)">
+
+```bash
+cim-compiler network \
+  -m model.onnx \
+  -o output \
+  -c config.json \
+  -T 8 -K 16 -B 16 -C 64 \
+  --batch-size 8 --strategy dp
+```
+
+Key options:
+
+- `--visualize`: Emit partition visualizations
+- `--keep-cg-ir`: Preserve intermediate CG JSON
+- `--verify`: Enable OP verify path
+
+</Accordion>
+<Accordion title="CG-Level (Stage 1 Only)">
+
+```bash
+cim-compiler cg-level \
+  -m model.onnx \
+  -o output/cg \
+  -T 8 -K 16 -B 16 -C 64 \
+  --batch-size 8 --strategy dp
+```
+
+Output: `instructions_<...>.json` (CG instruction plan)
+
+</Accordion>
+<Accordion title="OP-Level (Stage 2 Only)">
+
+```bash
+cim-compiler op-level \
+  -i output/cg/instructions_*.json \
+  -o output/op \
+  -c config.json \
+  --verify
+```
+
+Output: `isa_<cg_file>.json` (merged per-core ISA)
+
+</Accordion>
+</Accordions>
+
+<Callout type="warn" title="Flag Case Difference">
+The native `cim-compiler` uses uppercase flags (`-T`, `-K`, `-B`, `-C`) while `cimflow compile` uses lowercase (`-t`, `-k`, `-b`, `-c`).
+</Callout>
+
+### Developer Commands
+
+The following commands are not shown in `cim-compiler --help` but are available for specialized use cases: format conversion, instruction inspection, behavioral simulation, and config template generation.
+
+| Command | Purpose |
+| --- | --- |
+| `compile` | Compile CIM-DSL source to `final_code.json` |
+| `convert` | Convert instruction formats (`json`/`asm`) |
+| `show` | Display instruction file in human-readable assembly |
+| `simulate` | Built-in behavioral simulation (distinct from the cycle-accurate `cim-simulator`) |
+| `multi-core-simulate` | Multi-process behavioral simulation |
+| `op` | Single-operator compilation/testing workflow |
+| `config` | Generate compiler-format config from template |
+| `cfg_cimsim` | Generate simulator-format config from template |
+
+### Advanced Examples
+
+```bash
+# DSL source -> final_code.json
+cim-compiler compile -i code.cim -o output/codegen -c config.json
+
+# JSON ISA -> ASM
+cim-compiler convert --src-type json --dst-type asm --src-file isa.json --dst-file isa.asm
+
+# Inspect instruction stream
+cim-compiler show -i isa.json --type json
+```

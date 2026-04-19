@@ -1,0 +1,172 @@
+---
+title: OP-Level
+description: Lower CG tasks to per-core ISA with synchronization and code assembly
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+OP-level compilation consumes CG task JSON and emits ISA instruction streams keyed by numeric core IDs (`"0"`, `"1"`, ...).
+
+## OP-Level Processing Steps
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Parse CG Tasks [!toc]
+Read per-core staged CG task entries from the input JSON
+
+#### Lower to ISA [!toc]
+Convert each high-level operation to ISA instruction sequences
+
+#### Compile Kernels [!toc]
+Generate ISA code for operator kernels (conv, depthwise conv) when needed
+
+#### Insert Synchronization [!toc]
+Add `TAG` and `WAIT` instructions for inter-stage global-memory dependencies
+
+#### Merge Per-Core Output [!toc]
+Combine per-core instruction streams into a unified ISA JSON file
+
+</div>
+
+---
+
+## Commands
+
+<Tabs items={['cim-compiler', 'cimflow compile']}>
+<Tab value="cim-compiler">
+
+```bash
+cim-compiler op-level \
+  -i output/cg/instructions_*.json \
+  -o output/op \
+  -c config.json \
+  --verify
+```
+
+</Tab>
+<Tab value="cimflow compile">
+
+```bash
+cimflow compile op \
+  -i output/cg/instructions_*.json \
+  -o output/op \
+  -cf config.json
+```
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="Verify Flag">
+`--verify` enables correctness checks for operator kernel compilation (conv, depthwise). Coverage varies across instruction paths — it does not validate every emitted instruction.
+</Callout>
+
+---
+
+## Input Format
+
+OP-level expects CG JSON in this shape:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `metadata` | No | Optional metadata object (for example `op_count`) |
+| `core_<row>_<col>` | Yes | Core task entries such as `core_0_0`, `core_0_1`, ... |
+| `stages` | Yes | Stage container under each core entry |
+| `instructions` | Yes | Instruction list under each stage |
+
+The following instruction types are supported in CG task entries.
+
+| Category | Instructions |
+| --- | --- |
+| Memory | `read`, `write` |
+| Compute | `conv`, `depthwise_conv`, `add` |
+| Communication | `send`, `receive`, `send_ring`, `receive_ring` |
+| Synchronization | `wait_write` |
+
+---
+
+## Lowering Rules (High-Level)
+
+Each CG-level instruction is converted to one or more ISA instruction sequences. The table below shows the conversion pattern for each operation type.
+
+<Accordions>
+<Accordion title="Lowering Rule Reference">
+
+| CG Op | Lowering Pattern |
+| --- | --- |
+| `read` | Global to local transfer sequence |
+| `write` | Local/global transfer; inject `TAG` for tracked writes |
+| `conv` | ISA generated via the integrated kernel compiler, with DSL backend as fallback |
+| `depthwise_conv` | Template-based DSL generation + compile |
+| `send`/`receive` | Inter-core NoC transfer ISA with unique transfer IDs |
+| `add` | SIMD-special-register setup + vector add ISA |
+| `wait_write` | Emit `WAIT` with `sync_id` and `expected_writes` |
+
+</Accordion>
+</Accordions>
+
+For multi-core runs with inter-stage dependencies, OP-level inserts synchronization instructions. Producers emit `TAG` to mark write completion on global memory, and consumers emit `WAIT` to block until expected writes arrive. This prevents read-before-write races across stages.
+
+<Accordions>
+<Accordion title="Synchronization Details">
+
+The synchronization lowering follows these steps:
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Producer Tags Writes [!toc]
+Producer-side `write` emits `TAG` before transfer completion
+
+#### Consumer Waits [!toc]
+Consumer-side `wait_write` lowers to `WAIT`
+
+#### Validation [!toc]
+OP-level validates consistency: waits without writes are rejected, and `expected_writes` must match observed writes
+
+</div>
+
+<Callout type="warn" title="Validation Failure">
+If `expected_writes` mismatches actual tagged writes for a `sync_id`, OP-level compilation fails to prevent runtime deadlock.
+</Callout>
+
+</Accordion>
+</Accordions>
+
+---
+
+## Output Format
+
+Output file naming depends on the compilation path:
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Staged Command</div>
+    <div className="text-sm text-fd-muted-foreground"><code>isa_&lt;cg_file_name&gt;.json</code></div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">One-Step Network</div>
+    <div className="text-sm text-fd-muted-foreground"><code>isa_instructions_&lt;model&gt;_...json</code></div>
+  </div>
+</div>
+
+Unified ISA structure:
+
+```json
+{
+  "metadata": {
+    "op_count": 1110836224
+  },
+  "0": [
+    {"opcode": 45, "rd": 16, "imm": 8},
+    {"opcode": 48, "rs": 0, "rt": 2, "rd": 1, "imm": 0}
+  ],
+  "1": [
+    {"opcode": 45, "rd": 16, "imm": 8}
+  ]
+}
+```
+
+<Callout type="info" title="Intermediate Files">
+OP-level writes temporary per-core files under `each_core/` before merging them into the final unified ISA JSON. These can be removed after compilation.
+</Callout>

@@ -1,0 +1,192 @@
+---
+title: Execution and Resource Model
+description: IF/ID/IS/IE pipeline, stall arbitration, and control/runtime semantics
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { ArrowRight, Cpu, Search, SendHorizontal, Play } from 'lucide-react';
+
+Each `Core` advances instructions through a four-stage pipeline with cycle-level granularity. This section covers issue gating, resource conflicts, control semantics, and completion rules.
+
+## Instruction Lifecycle
+
+The core runtime follows a four-stage pipeline:
+Instruction Fetch (`IF`) → Instruction Decode (`ID`) → Instruction Schedule (`IS`) → Instruction Execute (`IE`).
+Different instructions can occupy different stages concurrently.
+
+### Stage Graph
+
+The graph below corresponds to the per-core runtime path.
+
+<div className="not-prose flex flex-wrap items-center justify-center gap-2 my-6 text-sm">
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Instruction Fetch (IF)</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Instruction Decode (ID)</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Instruction Schedule (IS)</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Instruction Execute (IE)</div>
+</div>
+
+The four pipeline stages map to distinct runtime behaviors.
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Cpu className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">IF — Instruction Fetch</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Fetches the instruction at the current <code>ins_index</code></div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Search className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">ID — Instruction Decode</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Decodes instruction into a typed payload and conflict metadata</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <SendHorizontal className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">IS — Instruction Schedule</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Evaluates stall/conflicts, gates <code>id_ex_enable</code>, issues to target unit</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Play className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">IE — Instruction Execute</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Target execute unit starts when enabled and ready</div>
+  </div>
+</div>
+
+---
+
+## Per-Cycle Progress Rules
+
+The decoder and PC update operate on separate phase offsets within each cycle, allowing instruction decode and issue to be pipelined.
+
+Each cycle, the core independently evaluates decode, issue, and PC advancement.
+
+### Decode and PC Update
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Decode</div>
+    <div className="text-sm text-fd-muted-foreground">Starts with <code>period_ns / 2</code> phase offset, then runs once per cycle</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Decode Gate</div>
+    <div className="text-sm text-fd-muted-foreground">Only proceeds when current conflict metadata has been cleared</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">PC Update</div>
+    <div className="text-sm text-fd-muted-foreground">Applies <code>ins_index += pc_increment</code> only when <code>id_stall == false</code></div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Conflict Reset</div>
+    <div className="text-sm text-fd-muted-foreground">After the PC advances, conflict metadata is cleared for the next instruction</div>
+  </div>
+</div>
+
+### Issue
+
+At each issue point, `processIssue` broadcasts a payload to all execute units. Only the matched unit type receives a non-null payload — all others receive `nullptr`.
+
+### Completion
+
+<div className="not-prose grid gap-3 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Decode Finish</div>
+    <div className="text-sm text-fd-muted-foreground"><code>id_finish = true</code> when the instruction stream has been fully decoded</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Unit Finish</div>
+    <div className="text-sm text-fd-muted-foreground">Each execute unit reports done after decode is finished and all local instructions are drained</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Core Finish</div>
+    <div className="text-sm text-fd-muted-foreground">Core run completes only when all execute units report <code>unit_finish</code></div>
+  </div>
+</div>
+
+---
+
+## Stall and Conflict Arbitration
+
+The core stalls when either condition holds:
+
+- The instruction stream has been fully decoded (`id_finish` is true)
+- Any execute-unit conflict signal is true
+
+Each unit has a `ConflictHandler` that checks whether its currently allocated resources (memory regions, data paths, functor configurations) overlap with those required by the incoming instruction.
+
+<Accordions>
+<Accordion title="Resource Conflict Types">
+
+The following table lists the conflict dimensions checked during instruction scheduling.
+
+| Dimension | Runtime Rule |
+| --- | --- |
+| Unit readiness | Same unit type stalls when target unit `ready == false` |
+| Memory overlap | Conflict on `read/write/used` bitmap intersection |
+| Data path | Conflict on same data path type or same dedicated data path ID |
+| SIMD functor | Two SIMD instructions with different functor configs conflict |
+| Reduce functor | Two Reduce instructions with different functor configs conflict |
+
+</Accordion>
+</Accordions>
+
+<Callout type="info" title="Issue vs Execute">
+Decode/issue does not imply immediate execution.
+An issued instruction waits until the target unit is ready and the enable signal is asserted before execution begins.
+</Callout>
+
+---
+
+## Control Runtime Semantics
+
+### Branch and Jump
+
+- Branch/jump condition and `pc_increment` are resolved during decode
+- No dedicated execute-unit operation is required for branch/jump decision
+
+<Accordions>
+<Accordion title="TAG and WAIT Semantics">
+
+The ISA defines `TAG` as a synchronization point marker and `WAIT` as a pairwise synchronization primitive (see [Inter-Core Synchronization](/docs/Abstraction/Instruction-Design/Instruction-Set/Inter-Core-Synchronization) for the architectural specification). In the current simulator runtime, these are implemented as follows:
+
+- Decoded as control opcodes but routed to `TransferUnit` for execution
+- `TAG` attaches a `sync_id` to the next `global_store`, enabling the receiver to track write completion
+- Consecutive `TAG` without an intervening tagged store is treated as a fatal invalid sequence
+- `WAIT` blocks until `expected_writes` tagged stores for the given `sync_id` have completed
+
+<Callout type="warn" title="Source ID Not Used in Current WAIT Logic">
+`WAIT` payload contains `source_id`, but current completion logic is keyed by `sync_id` and `expected_writes`.
+Do not assume source-level filtering in current runtime behavior.
+</Callout>
+
+</Accordion>
+<Accordion title="BARRIER Synchronization">
+
+Performs collective synchronization across multiple cores (see [Inter-Core Synchronization](/docs/Abstraction/Instruction-Design/Instruction-Set/Inter-Core-Synchronization)). All participating cores must reach the barrier before any can proceed.
+
+- Decoded as control opcode with `pc_increment = 1`
+- All cores specified by `num_cores` must reach the same `barrier_id` before execution continues
+
+</Accordion>
+</Accordions>
+
+---
+
+## Timing and Energy Accounting
+
+The simulator charges dynamic energy per-event during compute, memory, and network operations. Static energy comes from configured static power and total simulated runtime.
+
+<Callout type="info" title="Stall Energy Impact">
+Stall cycles produce no dynamic energy but extend the runtime, increasing static energy. Pipeline stalls from resource conflicts or synchronization waits affect the energy/performance tradeoff even though no useful work is performed.
+</Callout>
+
+For output format and metric definitions, see [Output and Metrics](/docs/Simulator/Output-and-Metrics).

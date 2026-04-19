@@ -1,0 +1,167 @@
+---
+title: Configuration and Constraints
+description: Hardware config formats, parameter constraints, and validation rules
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Settings, FileInput } from 'lucide-react';
+
+Hardware parameters and config schema consistency constrain compiler behavior. This section covers the expected formats and validation rules.
+
+## Hardware Parameters
+
+The compiler accepts the following hardware parameters.
+
+| Parameter | Meaning | Typical Values |
+| --- | --- | --- |
+| `T` | Macro group size | `1`, `4`, `8`, `12`, `16` |
+| `K` | Macro group count | `1`, `4`, `8`, `12`, `16`, `32`, ... |
+| `B` | NoC flit size / bandwidth unit | `8`, `16` |
+| `C` | Core count | Positive perfect square (`1`, `4`, `9`, `16`, `64`, ...) |
+| `batch-size` | Compilation batch scheduling granularity | Positive integer |
+
+C must be a perfect square because the compiler maps cores to a P×Q grid. T and K determine the CIM array parallelism within each core.
+
+---
+
+## Config Format Compatibility
+
+Compiler accepts two config families.
+
+<Accordions>
+<Accordion title="Simulator-Native Config (Preferred)">
+
+```json
+{
+  "chip_config": {
+    "core_config": {
+      "cim_unit_config": {
+        "macro_group_size": 8
+      }
+    },
+    "network_config": {
+      "bus_width_byte": 16
+    }
+  }
+}
+```
+
+Validation checks both `T` and `B` against this format.
+
+</Accordion>
+<Accordion title="Legacy Compiler Config (Supported)">
+
+```json
+{
+  "macro": {
+    "n_group": 16,
+    "n_macro": 128,
+    "n_row": 16,
+    "n_comp": 32,
+    "n_bcol": 64
+  },
+  "memory_list": [
+    {
+      "identifier": "global",
+      "addressing": {"offset_byte": 0, "size_byte": 1048576}
+    }
+  ]
+}
+```
+
+`T` is derived as `n_macro / n_group`. `B` is not validated in this legacy format.
+
+</Accordion>
+</Accordions>
+
+---
+
+## T/B Consistency Rule
+
+When running `cim-compiler network` (full pipeline), CG parameters and hardware config must agree — a mismatch causes compile-time failure before OP-level generation. In staged compilation (`cg-level` then `op-level`), ensure both steps use consistent hardware parameters and a matching config file to avoid address layout mismatches downstream.
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">T Consistency</div>
+    <div className="text-sm text-fd-muted-foreground"><code>T == config.macro_group_size</code> (or derived legacy equivalent)</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">B Consistency</div>
+    <div className="text-sm text-fd-muted-foreground"><code>B == config.bus_width_byte</code> (simulator-native format)</div>
+  </div>
+</div>
+
+---
+
+## Required Memory Layout for OP Backend
+
+OP backend relies on four named memory regions from config conversion. Incorrect or missing identifiers will cause errors in address allocation and transfer lowering.
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 lg:grid-cols-4 my-6">
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm text-center">
+    <div className="font-mono text-sm text-fd-primary">`global`</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm text-center">
+    <div className="font-mono text-sm text-fd-primary">`input_memory`</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm text-center">
+    <div className="font-mono text-sm text-fd-primary">`output_memory`</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-3 bg-fd-card shadow-sm text-center">
+    <div className="font-mono text-sm text-fd-primary">`macro`</div>
+  </div>
+</div>
+
+---
+
+## Troubleshooting
+
+<Accordions>
+<Accordion title="Model or Config File Not Found">
+
+Symptoms: immediate path resolution errors on `model-path` or `config-path`.
+
+Fix: Use absolute paths, or verify the current directory before running the compiler.
+
+</Accordion>
+<Accordion title="Invalid Parameter Value">
+
+Symptoms: errors such as `Invalid T value` / `Invalid B value`.
+
+Fix: Use supported domains (`T in {1,4,8,12,16}`, `B in {8,16}`).
+
+</Accordion>
+<Accordion title="T/B Mismatch with Config">
+
+Symptoms: validation message shows conflicting values between CLI args and config file.
+
+Fix: Either rerun CG/network with matching params, or choose a config file with matching hardware fields.
+
+</Accordion>
+<Accordion title="OP-Level Synchronization Validation Failure">
+
+Symptoms: `expected_writes` mismatch or `WAIT` without producer writes.
+
+Fix: Inspect CG instruction `write_id` / `wait_write` generation and ensure stage dependency metadata remains intact.
+
+</Accordion>
+</Accordions>
+
+<Callout type="warn" title="Keep Parameters Aligned Across Stages">
+If you run staged compilation (`cg-level` then `op-level`), use consistent hardware parameters and matching config in both steps.
+</Callout>
+
+---
+
+## Related Docs
+
+<Cards>
+  <Card icon={<Settings className="text-amber-400" />} title="Framework Configuration" href="/docs/Framework/configuration">
+    End-to-end configuration workflow and tool_paths.json reference
+  </Card>
+  <Card icon={<FileInput className="text-emerald-400" />} title="Simulator Input Files" href="/docs/Simulator/Input-Files">
+    Simulator-side file formats and validation rules
+  </Card>
+</Cards>

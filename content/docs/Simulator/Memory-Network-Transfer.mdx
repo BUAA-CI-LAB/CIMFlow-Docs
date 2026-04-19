@@ -1,0 +1,220 @@
+---
+title: Memory, Network and Transfer
+description: Address-space mapping, data paths, transfer runtime, and NoC delay/energy semantics
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { ArrowRight, HardDrive, Globe, Send, Database, Network, MapPin, Hash, GitFork } from 'lucide-react';
+
+Transfer-related instructions map to memory domains, runtime data paths, and NoC costs based on the address-space configuration.
+
+---
+
+## Address Space
+
+All transfer decode decisions are based on the `AddressSpace` configuration. For each source and destination address, the simulator resolves three things:
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <MapPin className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Memory Domain</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Local or global memory</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Hash className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Memory ID</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Concrete memory region binding</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <GitFork className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Transfer Type</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">Local, global, send, or receive</div>
+  </div>
+</div>
+
+<Callout type="warn" title="Incorrect Mappings">
+If the address-space mapping is incorrect, the simulator will resolve addresses to the wrong memory region or fail at startup. Verify mappings in [Input Files](/docs/Simulator/Input-Files) before debugging transfer behavior.
+</Callout>
+
+---
+
+## Transfer Types
+
+The simulator decodes each transfer instruction into one of five types based on the source and destination addresses.
+
+<div className="not-prose grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <HardDrive className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Local Transfer</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">`MEM_CPY` local to local via intra-core bus or dedicated data path</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Database className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Global Load</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">`MEM_CPY` global to local through NoC</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Globe className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Global Store</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">`MEM_CPY` local to global through NoC</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Send className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Send</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">`SEND` to another core via inter-core bus</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
+      <Network className="size-5 text-fd-primary" />
+      <div className="font-semibold text-fd-primary">Receive</div>
+    </div>
+    <div className="text-sm text-fd-muted-foreground">`RECV` from another core via inter-core bus</div>
+  </div>
+</div>
+
+### Data Path Selection
+
+For local transfers, the `DataPathManager` checks configured memory-pair mappings:
+
+- If `(src_mem_id, dst_mem_id)` matches a configured dedicated pair, the transfer uses a `local_dedicated_data_path`
+- Otherwise the transfer falls back to `intra_core_bus`
+
+Global load/store and inter-core send/receive always use `inter_core_bus`. Dedicated data paths are defined in `transfer_unit_config.local_dedicated_data_path_list`.
+
+---
+
+## Transfer Runtime Stages
+
+Each transfer instruction passes through three stages inside the `TransferUnit`.
+
+<div className="not-prose flex flex-wrap items-center justify-center gap-2 my-6 text-sm">
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Issue Payloads</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Read from Source</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Write to Destination</div>
+</div>
+
+<Accordions>
+<Accordion title="Local Transfer Runtime">
+
+Local transfers use `LocalTransferDataPath` with batch splitting. Each batch transfers up to `max(src_read_width, dst_write_width)` bytes, using the wider port width as batch size. The total number of batches is `ceil(size_byte / batch_max_data_size_byte)`.
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Issue [!toc]
+Create per-batch payloads from the full transfer request
+
+#### Read [!toc]
+Read the local source memory range for each batch
+
+#### Write [!toc]
+Write the destination range, release resources on the last batch, and mark the instruction as finished
+
+</div>
+
+Pipelining activates when `transfer_unit_config.pipeline = true` and `src_mem_id != dst_mem_id`.
+
+<Callout type="warn" title="Scalar Memory Timing">
+Scalar memory accesses use a separate timing path from vector and transfer operations. Non-scalar requests wait for the modeled access delay inside the memory module, while scalar-initiated accesses bypass this wait. Reported latency for scalar load/store may differ from vector or transfer operations targeting the same memory.
+</Callout>
+
+</Accordion>
+<Accordion title="Global and Inter-Core Runtime">
+
+Global and inter-core transfers use `GlobalTransferDataPath`. The behavior varies by transfer type.
+
+| Type | Read Stage | Write Stage |
+| --- | --- | --- |
+| `global_load` | Load from global memory through NoC | Write to local memory |
+| `global_store` | Read from local memory | Store to global memory through NoC |
+| `send` | Read local payload (after handshake) | Send data to destination core |
+| `receive` | Wait for remote data (after handshake) | Write received data to local memory |
+
+### SEND/RECV Handshake [!toc]
+
+Inter-core communication follows an explicit handshake protocol.
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### Sender Ready [!toc]
+Sender announces readiness (`sender_ready`)
+
+#### Receiver Ready [!toc]
+Receiver confirms readiness (`receiver_ready`)
+
+#### Data Transfer [!toc]
+Sender transmits data (`send_data`)
+
+#### Complete [!toc]
+Receiver unblocks and completes
+
+</div>
+
+The `transfer_id_tag` field pairs each sender with its receiver. A mismatch throws a runtime exception.
+
+</Accordion>
+<Accordion title="NoC Delay and Energy Model">
+
+For each NoC transaction, the simulator computes delay and energy from the network latency/energy matrix.
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Per-Flit Latency</div>
+    <div className="text-sm text-fd-muted-foreground">`latency[src][dst]` cycles x `period_ns`</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Flit Count</div>
+    <div className="text-sm text-fd-muted-foreground">`ceil(data_size_byte / bus_width_byte)`</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Transaction Delay</div>
+    <div className="text-sm text-fd-muted-foreground">`flit_count` x `per_flit_latency`</div>
+  </div>
+  <div className="rounded-lg border border-fd-border p-4 bg-fd-card shadow-sm">
+    <div className="font-semibold text-fd-primary mb-1">Dynamic Energy</div>
+    <div className="text-sm text-fd-muted-foreground">`flit_count` x `energy[src][dst]`</div>
+  </div>
+</div>
+
+The simulator supports two NoC transfer modes.
+
+| Mode | Behavior | Used By |
+| --- | --- | --- |
+| `transport` | Models request + response delay | Global load/store |
+| `only_send` | Models one-way send delay | Send/recv, sync notifications |
+
+</Accordion>
+</Accordions>
+
+---
+
+## Synchronization Through Transfer Path
+
+`TAG` and `WAIT` are executed in the `TransferUnit` runtime path. For the full ISA-level semantics, see [Execution and Resource Model](/docs/Simulator/Execution-Model).
+
+- `TAG` stores `sync_id` and attaches it to the next `global_store`
+- A tagged `global_store` triggers `notify_write_complete(sync_id)` to global memory
+- `WAIT` sends `wait_for_writes(sync_id, expected_writes)` and blocks until `sync_complete`
+- Consecutive `TAG` without an intervening tagged store is treated as a fatal invalid sequence
+
+<Callout type="info" title="Control Path Split">
+`TAG` and `WAIT` are control opcodes at decode level, but their runtime behavior is implemented by the transfer/network/global-memory path.
+For decode and issue details, see [Execution and Resource Model](/docs/Simulator/Execution-Model).
+</Callout>
+

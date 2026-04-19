@@ -1,0 +1,97 @@
+---
+title: Pipeline Overview
+description: End-to-end compiler stages and intermediate output formats
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { ArrowRight } from 'lucide-react';
+
+CIMFlow-Compiler provides a two-level compilation flow:
+
+- **CG-level**: partition model graph and generate stage/core tasks
+- **OP-level**: lower tasks to executable ISA sequences
+
+A separate DSL and MLIR backend (see [DSL and MLIR Backend](/docs/Compiler/DSL-and-MLIR-Backend)) generates low-level ISA code for operator kernels like convolution.
+
+## Compilation Paths
+
+<Tabs items={['One-Step (Recommended)', 'Two-Step (Staged)']}>
+<Tab value="One-Step (Recommended)">
+
+```bash
+cim-compiler network \
+  -m model.onnx \
+  -o output \
+  -c config.json \
+  -T 8 -K 16 -B 16 -C 64 \
+  --batch-size 8 --strategy dp
+```
+
+Input: ONNX model + hardware config.  
+Output: unified ISA JSON (`isa_instructions_*.json`).
+
+</Tab>
+<Tab value="Two-Step (Staged)">
+
+```bash
+# Stage 1: CG-level
+cim-compiler cg-level -m model.onnx -o output/cg -T 8 -K 16 -B 16 -C 64
+
+# Stage 2: OP-level
+cim-compiler op-level -i output/cg/instructions_*.json -o output/op -c config.json
+```
+
+This path is useful for inspecting intermediate CG IR and debugging stage partitioning.
+
+</Tab>
+</Tabs>
+
+---
+
+## Stage Graph
+
+The graph below corresponds to the full `cim-compiler network` path.
+
+<div className="not-prose flex flex-wrap items-center justify-center gap-2 my-6 text-sm">
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">ONNX</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">Model Simplify</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">CG-Level</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">CG IR</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-primary/50 px-2.5 py-1.5 bg-fd-primary/10 shadow-sm font-medium text-fd-primary">OP-Level</div>
+  <ArrowRight className="size-4 text-fd-muted-foreground" />
+  <div className="rounded-lg border border-fd-border px-2.5 py-1.5 bg-fd-card shadow-sm font-medium">ISA JSON</div>
+</div>
+
+The Model Simplify stage performs ONNX preprocessing, including operator fusion (e.g., BatchNorm folding) and shape inference. The CG IR output (`instructions_<...>.json`) serves directly as OP-level input — when running the two-step process, the CG output directory becomes the OP input path.
+
+---
+
+## Output Files
+
+Typical output structure for `cim-compiler network`:
+
+<Files>
+  <Folder name="output" defaultOpen>
+    <File name="isa_instructions_<model>_<strategy>_T<T>_K<K>_B<B>_C<C>_batch<N>.json" />
+    <File name="instructions_<...>.json (optional, when --keep-cg-ir)" />
+  </Folder>
+</Files>
+
+Typical output structure for staged flow:
+
+<Files>
+  <Folder name="output" defaultOpen>
+    <Folder name="cg" defaultOpen>
+      <File name="instructions_<model>_<strategy>_T<T>_K<K>_B<B>_C<C>_batch<N>.json" />
+    </Folder>
+    <Folder name="op" defaultOpen>
+      <File name="isa_<cg_filename>.json (e.g., isa_instructions_<...>.json)" />
+      <Folder name="each_core (intermediate, removable)" />
+    </Folder>
+  </Folder>
+</Files>

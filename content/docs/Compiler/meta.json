@@ -1,7 +1,18 @@
 {
-    "title": "Compiler",
-    "description": "MLIR-based toolchain",
-    "icon": "Workflow",
-    "root": true,
-    "pages": ["index"]
+  "title": "Compiler",
+  "description": "Two-level compilation and MLIR backend",
+  "icon": "Workflow",
+  "root": true,
+  "pages": [
+    "index",
+    "---Usage---",
+    "CLI-Reference",
+    "---Internals---",
+    "Pipeline-Overview",
+    "CG-Level",
+    "OP-Level",
+    "---Reference---",
+    "DSL-and-MLIR-Backend",
+    "Configuration-and-Constraints"
+  ]
 }

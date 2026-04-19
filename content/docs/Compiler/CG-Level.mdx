@@ -1,0 +1,147 @@
+---
+title: CG-Level
+description: Graph partitioning and stage-level instruction generation
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+CG-level compilation converts an ONNX graph into a staged multi-core task graph. The output is a JSON instruction plan organized by core grid position, with keys like `core_0_0`, `core_0_1`.
+
+## CG-Level Processing Steps
+
+<div className="fd-steps [&_h4]:fd-step [&_p]:my-1">
+
+#### ONNX Preprocessing [!toc]
+Parse the ONNX model and perform shape inference
+
+#### Dependency Analysis [!toc]
+Build a dependency graph centered on convolution operators
+
+#### Stage Partitioning [!toc]
+Partition computation stages across the available cores
+
+#### Communication Planning [!toc]
+Generate communication operations (`read`, `write`, `send`, `receive`, `wait_write`)
+
+#### Model Simplification [!toc]
+Simplify the ONNX graph before partitioning; oversized convolutions may be split
+
+#### Metadata Generation [!toc]
+Compute operation counts for throughput metrics
+
+</div>
+
+---
+
+## Commands
+
+<Tabs items={['cim-compiler', 'cimflow compile']}>
+<Tab value="cim-compiler">
+
+```bash
+cim-compiler cg-level \
+  -m model.onnx \
+  -o output/cg \
+  -T 8 -K 16 -B 16 -C 64 \
+  --batch-size 8 \
+  --strategy dp \
+  --visualize
+```
+
+</Tab>
+<Tab value="cimflow compile">
+
+```bash
+cimflow compile cg \
+  -m model.onnx \
+  -o output/cg \
+  -t 8 -k 16 -b 16 -c 64 \
+  --batch-size 8 \
+  --strategy dp
+```
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="Visualization">
+Add `--visualize` (native) to emit graph and core-allocation plots for inspecting partition results.
+</Callout>
+
+---
+
+## Parameters
+
+These parameters define the hardware target and compilation strategy. `T` and `K` control the CIM macro array dimensions within each core, `B` sets the NoC flit size (affecting data transfer granularity), and `C` determines the core grid size (must be a perfect square). See [Configuration and Constraints](/docs/Compiler/Configuration-and-Constraints) for validation rules and config format details.
+
+| Parameter | CLI Option | Required | Description |
+| --- | --- | --- | --- |
+| `model-path` | `-m`, `--model-path` | Yes | Input ONNX model path |
+| `T` | `-T` | No | Macro group size |
+| `K` | `-K` | No | Number of macro groups |
+| `B` | `-B` | No | NoC flit size (bandwidth parameter) |
+| `C` | `-C` | No | Total core count |
+| `strategy` | `--strategy` | No | Partition strategy: `dp`, `baseline1`, `baseline2` |
+| `batch-size` | `--batch-size` | No | Batch scheduling granularity for instruction generation |
+
+<Accordions>
+<Accordion title="Partition Strategy Reference">
+
+| Strategy | Internal Mode | Behavior |
+| --- | --- | --- |
+| `dp` | `0` | Dynamic-programming partition search (default) |
+| `baseline1` | `1` | Greedy baseline without replication |
+| `baseline2` | `2` | Greedy baseline with replication |
+
+</Accordion>
+</Accordions>
+
+---
+
+## Output Format
+
+CG output file naming:
+
+```text
+instructions_<model>_<strategy>_T<T>_K<K>_B<B>_C<C>_batch<N>.json
+```
+
+Example structure:
+
+```json
+{
+  "metadata": {
+    "op_count": 1110836224
+  },
+  "core_0_0": {
+    "stages": {
+      "0": {
+        "cluster_id": "Conv_0",
+        "weight_replica_id": 0,
+        "instructions": [
+          {"op": "read", "attr": {"tensor_type": "weight", "shape": [64,3,3,3]}},
+          {"op": "read", "attr": {"tensor_type": "feature", "shape": [1,3,32,32]}},
+          {"op": "conv", "attr": {"X_shape": [1,3,32,32], "W_shape": [64,3,3,3]}},
+          {"op": "write", "attr": {"tensor_type": "feature", "shape": [1,64,32,32], "write_id": "node_0_batch_0"}}
+        ]
+      }
+    }
+  }
+}
+```
+
+<Accordions>
+<Accordion title="Communication and Dependency Details">
+
+- Intra-stage dependencies may use on-chip `send/receive`
+- Cross-stage dependencies flow through global-memory `write` and next-stage `read`
+- For multi-core mode, CG attaches deterministic `write_id` and expected write counts to support OP-level synchronization lowering
+
+<Callout type="info" title="Inter-Stage Safety">
+`wait_write` instructions are inserted before cross-stage reads in multi-core mode to prevent read-before-write races on global memory.
+</Callout>
+
+</Accordion>
+</Accordions>
+

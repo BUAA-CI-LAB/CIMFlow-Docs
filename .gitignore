@@ -30,3 +30,6 @@ next-env.d.ts
 # Local reference repos
 .reference/
 test-results/
+
+# Claude Code local config
+.claude/

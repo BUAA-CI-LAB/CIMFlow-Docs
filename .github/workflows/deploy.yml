@@ -18,6 +18,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history: the last-modified plugin derives each page's date from
+          # git log, and the default shallow clone collapses them all to the
+          # date of the deploy.
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
